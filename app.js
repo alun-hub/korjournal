@@ -419,9 +419,19 @@ function releaseWakeLock() {
   if (wakeLock) { wakeLock.release(); wakeLock = null; }
 }
 
-// Återaktivera när fliken blir synlig igen
+// Återaktivera när fliken blir synlig igen, varna om GPS-gap
+let hiddenAt = null;
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible" && recording) acquireWakeLock();
+  if (document.visibilityState === "hidden") {
+    if (recording) hiddenAt = Date.now();
+  } else {
+    if (recording && hiddenAt) {
+      const gapS = Math.round((Date.now() - hiddenAt) / 1000);
+      if (gapS >= 5) showToast(`⚠ Appen var i bakgrunden ${gapS} s — GPS-data kan saknas`, true);
+    }
+    hiddenAt = null;
+    if (recording) acquireWakeLock();
+  }
 });
 
 // --- Settings ---
