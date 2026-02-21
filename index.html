@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Körjournal</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#141820">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Körjournal">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="leaflet.css"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0d0f14;
+      color: #dde;
+      overflow: hidden;
+    }
+
+    /* ── Map ── */
+    #map {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      bottom: 220px;
+    }
+
+    /* ── Top buttons ── */
+    #top-bar {
+      position: absolute;
+      top: 12px; right: 12px;
+      display: flex;
+      gap: 8px;
+      z-index: 500;
+    }
+
+    .top-btn {
+      background: #141820dd;
+      border: 1px solid #2a2e3a;
+      color: #ccd;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      white-space: nowrap;
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+
+    /* Settings dropdown */
+    #settings-panel {
+      display: none;
+      position: absolute;
+      top: 48px; right: 0;
+      background: #1c2030;
+      border: 1px solid #2a2e3a;
+      border-radius: 10px;
+      padding: 14px;
+      width: 220px;
+      max-width: calc(100vw - 24px);
+      z-index: 600;
+    }
+
+    #settings-panel label {
+      font-size: 0.82rem;
+      color: #99a;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    #settings-panel input {
+      width: 100%;
+      background: #0d0f14;
+      border: 1px solid #2a2e3a;
+      border-radius: 6px;
+      color: #dde;
+      padding: 8px 10px;
+      font-size: 1rem;
+      outline: none;
+      margin-bottom: 8px;
+    }
+
+    #rate-apply {
+      width: 100%;
+      background: #3b82f6;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      padding: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+
+    /* ── Bottom panel ── */
+    #panel {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 220px;
+      background: #141820;
+      border-top: 1px solid #2a2e3a;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #status-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.83rem;
+      color: #99a;
+    }
+
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #556;
+      flex-shrink: 0;
+    }
+
+    .dot.recording {
+      background: #ef4444;
+      animation: blink 1.2s infinite;
+    }
+
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+    /* Stats row */
+    #stats-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .stat-box {
+      flex: 1;
+      background: #1c2030;
+      border-radius: 10px;
+      padding: 9px 12px;
+    }
+
+    .stat-label {
+      font-size: 0.68rem;
+      color: #778;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-value {
+      font-size: 1.35rem;
+      font-weight: 600;
+      color: #dde;
+      margin-top: 1px;
+      line-height: 1.2;
+    }
+
+    .stat-unit { font-size: 0.75rem; color: #99a; }
+
+    /* Record button */
+    #record-btn {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      transition: opacity 0.15s;
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+
+    #record-btn:active { opacity: 0.8; }
+    #record-btn.idle { background: #22c55e; color: #052e0f; }
+    #record-btn.recording { background: #ef4444; color: #fff; }
+
+    /* ── Summary modal ── */
+    #summary-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 800;
+      align-items: flex-end;
+    }
+
+    #summary-modal.show { display: flex; }
+
+    #summary-sheet {
+      background: #141820;
+      border-radius: 20px 20px 0 0;
+      padding: 20px 20px 32px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .sheet-handle {
+      width: 36px; height: 4px;
+      background: #2a2e3a;
+      border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+
+    .summary-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #dde;
+      margin-bottom: 16px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 10px 0;
+      border-bottom: 1px solid #1c2030;
+      font-size: 0.93rem;
+    }
+
+    .summary-row:last-of-type { border-bottom: none; }
+    .s-label { color: #99a; }
+    .s-value { color: #dde; font-weight: 500; text-align: right; }
+    .s-total { font-size: 1.15rem; font-weight: 700; color: #22c55e; }
+
+    .toll-list { margin-top: 6px; }
+    .toll-item { font-size: 0.8rem; color: #778; padding: 2px 0; }
+
+    #trip-note {
+      width: 100%;
+      margin-top: 14px;
+      background: #1c2030;
+      border: 1px solid #2a2e3a;
+      border-radius: 8px;
+      color: #ccd;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    #trip-note::placeholder { color: #445; }
+
+    #summary-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    #summary-actions button {
+      flex: 1;
+      padding: 13px;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.97rem;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+
+    #btn-discard { background: #1c2030; color: #99a; }
+    #btn-save    { background: #3b82f6; color: #fff; }
+
+    /* ── History screen ── */
+    #history-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #0d0f14;
+      z-index: 900;
+      flex-direction: column;
+    }
+
+    #history-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border-bottom: 1px solid #1c2030;
+      flex-shrink: 0;
+    }
+
+    #back-btn {
+      background: none;
+      border: none;
+      color: #3b82f6;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 4px 8px 4px 0;
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+
+    #history-title { font-size: 1.05rem; font-weight: 600; color: #dde; }
+
+    #trip-list { flex: 1; overflow-y: auto; }
+
+    .trip-card {
+      padding: 14px 16px;
+      border-bottom: 1px solid #1c2030;
+    }
+
+    .trip-meta { font-size: 0.77rem; color: #778; margin-bottom: 3px; }
+    .trip-note-label { font-size: 0.82rem; color: #aab; margin-bottom: 4px; }
+
+    .trip-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .trip-km  { font-size: 1.05rem; font-weight: 600; color: #dde; }
+    .trip-sub { font-size: 0.82rem; color: #778; margin-top: 1px; }
+    .trip-amount { font-size: 1.05rem; font-weight: 700; color: #22c55e; }
+
+    #history-footer {
+      padding: 12px 16px;
+      border-top: 1px solid #1c2030;
+      flex-shrink: 0;
+    }
+
+    #export-btn {
+      width: 100%;
+      padding: 13px;
+      background: #1c2030;
+      border: 1px solid #2a2e3a;
+      border-radius: 10px;
+      color: #ccd;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: #556;
+      padding: 60px 24px;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 238px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1c2030;
+      color: #dde;
+      padding: 10px 18px;
+      border-radius: 20px;
+      font-size: 0.88rem;
+      z-index: 9999;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .toast-error { background: #7f1d1d; color: #fca5a5; }
+
+    /* ── Select mode button ── */
+    #select-mode-btn {
+      margin-left: auto;
+      background: none;
+      border: 1px solid #2a2e3a;
+      border-radius: 8px;
+      color: #99a;
+      font-size: 0.85rem;
+      padding: 6px 12px;
+      cursor: pointer;
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+
+    #select-mode-btn.active {
+      border-color: #3b82f6;
+      color: #3b82f6;
+    }
+
+    /* ── History summary bar ── */
+    #history-summary-bar {
+      padding: 6px 16px;
+      font-size: 0.78rem;
+      color: #556;
+      border-bottom: 1px solid #1c2030;
+      flex-shrink: 0;
+    }
+
+    #history-summary-bar:empty { display: none; }
+
+    /* ── Selection footer ── */
+    #selection-footer {
+      display: none;
+      padding: 12px 16px;
+      border-top: 1px solid #1c2030;
+      flex-shrink: 0;
+      gap: 8px;
+    }
+
+    #selection-footer button {
+      flex: 1;
+      padding: 12px 8px;
+      border-radius: 10px;
+      border: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+
+    #sel-export-btn { background: #1c2030; border: 1px solid #2a2e3a; color: #ccd; }
+    #sel-share-btn  { background: #1c2030; border: 1px solid #2a2e3a; color: #ccd; }
+    #sel-delete-btn { background: #7f1d1d; color: #fca5a5; }
+
+    /* ── Trip card selection layout ── */
+    .trip-card.selectable {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .trip-card-content { flex: 1; min-width: 0; }
+
+    /* ── Trip actions (share + delete icons) ── */
+    .trip-actions {
+      display: flex;
+      gap: 4px;
+      margin-top: 6px;
+      justify-content: flex-end;
+    }
+
+    .trip-icon-btn {
+      background: none;
+      border: none;
+      color: #778;
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 0;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      touch-action: manipulation;
+    }
+
+    .trip-icon-btn:active { background: #1c2030; }
+
+    /* ── Checkbox ── */
+    .trip-checkbox {
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      min-width: 22px;
+      border: 2px solid #2a2e3a;
+      border-radius: 6px;
+      background: #0d0f14;
+      cursor: pointer;
+      margin-top: 2px;
+      position: relative;
+      touch-action: manipulation;
+    }
+
+    .trip-checkbox:checked {
+      background: #3b82f6;
+      border-color: #3b82f6;
+    }
+
+    .trip-checkbox:checked::after {
+      content: "";
+      position: absolute;
+      left: 4px; top: 1px;
+      width: 9px; height: 13px;
+      border: 2.5px solid #fff;
+      border-top: none;
+      border-left: none;
+      transform: rotate(45deg);
+    }
+
+    /* ── Responsive bottom panel ── */
+    @media (max-width: 390px) {
+      #panel { padding: 10px 12px; gap: 8px; }
+      .stat-value { font-size: 1.15rem; }
+      .stat-label { font-size: 0.65rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<!-- Top bar -->
+<div id="top-bar">
+  <div style="position: relative;">
+    <button class="top-btn" id="settings-btn">⚙ Inställningar</button>
+    <div id="settings-panel">
+      <label>Milersättning (kr/km)<br><small style="color:#556">Skatteverket: 2.50 kr/km</small></label>
+      <input type="number" id="rate-input" value="2.50" step="0.05" min="0.1">
+      <button id="rate-apply">Spara</button>
+    </div>
+  </div>
+  <button class="top-btn" id="history-btn">Historik</button>
+</div>
+
+<!-- Bottom panel -->
+<div id="panel">
+  <div id="status-bar">
+    <div class="dot" id="rec-dot"></div>
+    <span id="status-text">Redo att starta</span>
+  </div>
+
+  <div id="stats-row">
+    <div class="stat-box">
+      <div class="stat-label">Sträcka</div>
+      <div class="stat-value"><span id="stat-km">0.0</span><span class="stat-unit"> km</span></div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Tid</div>
+      <div class="stat-value" id="stat-time">00:00</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Trängselskatt</div>
+      <div class="stat-value"><span id="stat-toll">0</span><span class="stat-unit"> kr</span></div>
+    </div>
+  </div>
+
+  <button id="record-btn" class="idle">Starta körning</button>
+</div>
+
+<!-- Summary modal -->
+<div id="summary-modal">
+  <div id="summary-sheet">
+    <div class="sheet-handle"></div>
+    <div class="summary-title">Körning klar</div>
+
+    <div class="summary-row">
+      <span class="s-label">Datum</span>
+      <span class="s-value" id="sum-date"></span>
+    </div>
+    <div class="summary-row">
+      <span class="s-label">Tid</span>
+      <span class="s-value" id="sum-time"></span>
+    </div>
+    <div class="summary-row">
+      <span class="s-label">Sträcka</span>
+      <span class="s-value" id="sum-km"></span>
+    </div>
+    <div class="summary-row">
+      <span class="s-label">Milersättning</span>
+      <span class="s-value" id="sum-mileage"></span>
+    </div>
+    <div id="sum-toll-section" class="summary-row" style="display:none; flex-direction: column;">
+      <div style="display:flex; justify-content:space-between; width:100%">
+        <span class="s-label">Trängselskatt</span>
+        <span class="s-value" id="sum-toll"></span>
+      </div>
+      <div class="toll-list" id="sum-toll-list"></div>
+    </div>
+    <div class="summary-row" style="padding-top: 14px;">
+      <span class="s-label">Totalt att begära</span>
+      <span class="s-value s-total" id="sum-total"></span>
+    </div>
+
+    <input type="text" id="trip-note" placeholder="Anteckning — kund, ärende, syfte…">
+
+    <div id="summary-actions">
+      <button id="btn-discard">Kassera</button>
+      <button id="btn-save">Spara resa</button>
+    </div>
+  </div>
+</div>
+
+<!-- History screen -->
+<div id="history-screen">
+  <div id="history-header">
+    <button id="back-btn">← Tillbaka</button>
+    <span id="history-title">Körjournal</span>
+    <button id="select-mode-btn">Markera</button>
+  </div>
+  <div id="history-summary-bar"></div>
+  <div id="trip-list"></div>
+  <div id="history-footer">
+    <button id="export-btn">Exportera som CSV</button>
+  </div>
+  <div id="selection-footer">
+    <button id="sel-export-btn">Exportera (0)</button>
+    <button id="sel-share-btn" style="display:none">Dela</button>
+    <button id="sel-delete-btn">Radera (0)</button>
+  </div>
+</div>
+
+<script src="leaflet.js"></script>
+<script src="congestion_tax.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
