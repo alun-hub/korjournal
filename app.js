@@ -189,6 +189,7 @@ function showHistory() {
   exitSelectionMode();
   renderTripList();
   updateSummaryBar();
+  document.getElementById("map").style.visibility = "hidden";
   document.getElementById("history-screen").style.display = "flex";
 }
 
@@ -497,6 +498,7 @@ document.getElementById("history-btn").addEventListener("click", showHistory);
 
 document.getElementById("back-btn").addEventListener("click", () => {
   document.getElementById("history-screen").style.display = "none";
+  document.getElementById("map").style.visibility = "";
 });
 
 document.getElementById("btn-save").addEventListener("click", saveTrip);
