@@ -22,7 +22,6 @@ function initMap() {
     attribution: "© OpenStreetMap",
     maxZoom: 19,
   }).addTo(map);
-  L.control.zoom({ position: "topleft" }).addTo(map);
 }
 
 // --- Recording ---
