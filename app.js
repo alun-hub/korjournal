@@ -10,6 +10,7 @@ let currentTrip  = null;
 let taxTracker   = null;
 let timerInterval= null;
 let lastPos      = null;
+let wakeLock     = null;
 
 // Selection state
 let selectionMode   = false;
@@ -49,6 +50,7 @@ function startRecording() {
   polyline = L.polyline([], { color: "#3b82f6", weight: 5, opacity: 0.9 }).addTo(map);
 
   setUiRecording(true);
+  acquireWakeLock();
 
   timerInterval = setInterval(updateTimer, 1000);
 
@@ -68,6 +70,7 @@ function stopRecording() {
   }
   clearInterval(timerInterval);
   timerInterval = null;
+  releaseWakeLock();
 
   if (!currentTrip || currentTrip.points.length < 2) {
     showToast("För lite data — inga punkter sparades.");
@@ -399,6 +402,27 @@ function updateSelectionFooter() {
     shareBtn.style.display = "none";
   }
 }
+
+// --- Wake Lock ---
+async function acquireWakeLock() {
+  if (!("wakeLock" in navigator)) return;
+  try {
+    wakeLock = await navigator.wakeLock.request("screen");
+    wakeLock.addEventListener("release", () => {
+      // Återaktivera om inspelning fortfarande pågår (t.ex. efter skärmlås)
+      if (recording) acquireWakeLock();
+    });
+  } catch (_) {}
+}
+
+function releaseWakeLock() {
+  if (wakeLock) { wakeLock.release(); wakeLock = null; }
+}
+
+// Återaktivera när fliken blir synlig igen
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && recording) acquireWakeLock();
+});
 
 // --- Settings ---
 function applyRate() {
