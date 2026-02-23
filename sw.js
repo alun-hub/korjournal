@@ -29,27 +29,38 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
 
-  // Map tiles — let the browser handle these directly (network only)
+  // Karttiles — nätverket direkt
   if (url.hostname.endsWith("tile.openstreetmap.org")) return;
 
-  e.respondWith(
-    caches.match(e.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(e.request)
+  // App-filer — network-first: hämta färskt om möjligt, annars cache (offline)
+  if (APP_SHELL.some((path) => url.pathname.endsWith(path.replace("./", "/")) || url.pathname === "/korjournal/" || url.pathname === "/")) {
+    e.respondWith(
+      fetch(e.request)
         .then((response) => {
-          // Cache successful GET responses
-          if (e.request.method === "GET" && response.ok) {
+          if (response.ok) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
           }
           return response;
         })
-        .catch(() => {
-          // Offline fallback for navigation requests
-          if (e.request.mode === "navigate") {
-            return caches.match("./index.html");
-          }
-        });
+        .catch(() => caches.match(e.request).then((cached) => cached || caches.match("./index.html")))
+    );
+    return;
+  }
+
+  // Övriga resurser — cache-first
+  e.respondWith(
+    caches.match(e.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(e.request).then((response) => {
+        if (e.request.method === "GET" && response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone));
+        }
+        return response;
+      }).catch(() => {
+        if (e.request.mode === "navigate") return caches.match("./index.html");
+      });
     })
   );
 });

@@ -564,5 +564,16 @@ initMap();
 
 // --- Service Worker ---
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+
+    // När ny SW tagit över — ladda om för att få nya filer
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (recording) {
+        showToast("Ny version tillgänglig — starta om appen efter körningen");
+      } else {
+        window.location.reload();
+      }
+    });
+  });
 }
