@@ -509,6 +509,42 @@
       transform: rotate(45deg);
     }
 
+    /* ── Rutt-overlay ── */
+    #route-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1200;
+    }
+
+    #route-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: #141820ee;
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid #2a2e3a;
+    }
+
+    #route-back-btn {
+      background: none;
+      border: none;
+      color: #3b82f6;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 4px 8px 4px 0;
+      min-height: 44px;
+      touch-action: manipulation;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    #route-info {
+      font-size: 0.85rem;
+      color: #99a;
+    }
+
     /* ── Responsive bottom panel ── */
     @media (max-width: 390px) {
       #panel { padding: 10px 12px; gap: 8px; }
@@ -618,6 +654,14 @@
     <button id="sel-export-btn">Exportera (0)</button>
     <button id="sel-share-btn" style="display:none">Dela</button>
     <button id="sel-delete-btn">Radera (0)</button>
+  </div>
+</div>
+
+<!-- Route overlay -->
+<div id="route-overlay">
+  <div id="route-bar">
+    <button id="route-back-btn">← Historik</button>
+    <div id="route-info"></div>
   </div>
 </div>
 

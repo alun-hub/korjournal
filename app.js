@@ -231,6 +231,7 @@ function renderTripList() {
         </div>
         ${passagesHtml}
         ${!selectionMode ? `<div class="trip-actions">
+          ${t.points && t.points.length >= 2 ? `<button class="trip-icon-btn" data-action="route" data-id="${t.id}" title="Visa rutt">&#128506;</button>` : ""}
           ${canShare ? `<button class="trip-icon-btn" data-action="share" data-id="${t.id}" title="Dela">&#128279;</button>` : ""}
           <button class="trip-icon-btn" data-action="delete" data-id="${t.id}" title="Radera">&#128465;</button>
         </div>` : ""}
@@ -410,6 +411,55 @@ function updateSelectionFooter() {
   }
 }
 
+// --- Route view ---
+let routePolyline = null;
+let routeMarkers  = [];
+
+function showRoute(tripId) {
+  const trip = getTrips().find(t => t.id === tripId);
+  if (!trip || !trip.points || trip.points.length < 2) return;
+
+  document.getElementById("history-screen").style.display = "none";
+
+  // Rensa tidigare ruttvisning
+  if (routePolyline) { map.removeLayer(routePolyline); routePolyline = null; }
+  routeMarkers.forEach(m => map.removeLayer(m));
+  routeMarkers = [];
+
+  const latlngs = trip.points.map(p => [p.lat, p.lng]);
+
+  routePolyline = L.polyline(latlngs, { color: "#3b82f6", weight: 5, opacity: 0.9 }).addTo(map);
+
+  // Startpunkt (grön) och slutpunkt (röd)
+  routeMarkers.push(
+    L.circleMarker(latlngs[0], {
+      radius: 7, color: "#fff", weight: 2, fillColor: "#22c55e", fillOpacity: 1,
+    }).addTo(map),
+    L.circleMarker(latlngs[latlngs.length - 1], {
+      radius: 7, color: "#fff", weight: 2, fillColor: "#ef4444", fillOpacity: 1,
+    }).addTo(map)
+  );
+
+  map.fitBounds(routePolyline.getBounds(), { padding: [60, 24] });
+
+  const start   = new Date(trip.startTime);
+  const end     = new Date(trip.endTime);
+  const dateStr = start.toLocaleDateString("sv-SE", { weekday: "short", day: "numeric", month: "short" });
+  const mileage = Math.round(trip.distanceKm * MILEAGE_RATE);
+  document.getElementById("route-info").textContent =
+    `${dateStr} · ${fmtTime(start)}–${fmtTime(end)} · ${trip.distanceKm.toFixed(1)} km · ${mileage + trip.totalToll} kr`;
+
+  document.getElementById("route-overlay").style.display = "block";
+}
+
+function hideRoute() {
+  document.getElementById("route-overlay").style.display = "none";
+  if (routePolyline) { map.removeLayer(routePolyline); routePolyline = null; }
+  routeMarkers.forEach(m => map.removeLayer(m));
+  routeMarkers = [];
+  showHistory();
+}
+
 // --- Wake Lock ---
 async function acquireWakeLock() {
   if (!("wakeLock" in navigator)) return;
@@ -537,7 +587,8 @@ document.getElementById("trip-list").addEventListener("click", (e) => {
   if (iconBtn) {
     e.stopPropagation();
     const id = Number(iconBtn.dataset.id);
-    if (iconBtn.dataset.action === "share") shareSingleTrip(id);
+    if (iconBtn.dataset.action === "route")  showRoute(id);
+    if (iconBtn.dataset.action === "share")  shareSingleTrip(id);
     if (iconBtn.dataset.action === "delete") deleteSingleTrip(id);
     return;
   }
@@ -555,6 +606,7 @@ document.getElementById("trip-list").addEventListener("click", (e) => {
   }
 });
 
+document.getElementById("route-back-btn").addEventListener("click", hideRoute);
 document.getElementById("sel-export-btn").addEventListener("click", exportSelectedCSV);
 document.getElementById("sel-share-btn").addEventListener("click", shareSelectedTrip);
 document.getElementById("sel-delete-btn").addEventListener("click", deleteSelectedTrips);
