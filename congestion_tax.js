@@ -29,7 +29,7 @@ const TOLL_STATIONS = [
   { name: "Stora Essingen",      lat: 59.32033, lng: 17.98833, group: "essingeleden" },
 ];
 
-const DETECTION_RADIUS_M = 60;
+const DETECTION_RADIUS_M = 10;
 
 // Tidsluckor [start_hhmm, end_hhmm]
 const TIME_SLOTS = [

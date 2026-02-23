@@ -212,6 +212,12 @@ function renderTripList() {
     const total    = mileage + t.totalToll;
     const isChecked = selectedTripIds.has(t.id) ? " checked" : "";
 
+    const passagesHtml = t.passages && t.passages.length > 0
+      ? `<div class="trip-passages">${t.passages.map(p =>
+          `<div class="trip-passage-item">${p.time} ${p.station}${p.sek > 0 ? ` <span class="passage-sek">+${p.sek} kr</span>` : ` <span class="passage-note">${p.note}</span>`}</div>`
+        ).join("")}</div>`
+      : "";
+
     const cardContent = `
       <div class="trip-card-content">
         <div class="trip-meta">${dateStr} · ${timeStr}</div>
@@ -223,6 +229,7 @@ function renderTripList() {
           </div>
           <div class="trip-amount">${total} kr</div>
         </div>
+        ${passagesHtml}
         ${!selectionMode ? `<div class="trip-actions">
           ${canShare ? `<button class="trip-icon-btn" data-action="share" data-id="${t.id}" title="Dela">&#128279;</button>` : ""}
           <button class="trip-icon-btn" data-action="delete" data-id="${t.id}" title="Radera">&#128465;</button>
