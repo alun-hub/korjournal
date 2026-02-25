@@ -3,46 +3,74 @@
  * Källa: Transportstyrelsen (https://www.transportstyrelsen.se/sv/vagtrafik/fordon/skatter-och-avgifter/trangselskatt/trangselskatt-i-stockholm/)
  */
 
-// Positioner från Trafikverkets officiella GeoPackage (Betalstationer_70525.gpkg, SWEREF99 TM → WGS84).
-// Stationer med sensorer > 15 m isär har två rader med samma namn — passedStations-setet
-// förhindrar dubbeldebitering om båda triggas under samma resa.
+// Alla sensorpositioner från Trafikverkets officiella GeoPackage (Betalstationer_70525.gpkg).
+// Varje rad = en fysisk sensor (CP-nummer). Samma stationsnamn på flera rader = olika körfält/ramper.
+// passedStations-setet förhindrar dubbeldebitering om flera sensorer för samma station triggas.
 const TOLL_STATIONS = [
   // ── Inre tullen (kordon runt innerstaden) ──────────────────────────────────
-  { name: "Danvikstull",       lat: 59.31397, lng: 18.10348, group: "city" }, // CP 271/272, centroid 12 m
-  { name: "Skansbron",         lat: 59.30403, lng: 18.07942, group: "city" }, // CP 281/282, centroid  1 m
-  { name: "Skanstullsbron",    lat: 59.30632, lng: 18.07737, group: "city" }, // CP 291/292, centroid 12 m
-  { name: "Johanneshovsbron",  lat: 59.30380, lng: 18.07713, group: "city" }, // CP 301/302, centroid  9 m
-  { name: "Liljeholmsbron",    lat: 59.31144, lng: 18.02883, group: "city" }, // CP 311,  62 m mellan sensorerna
+  { name: "Danvikstull",       lat: 59.31402, lng: 18.10351, group: "city" }, // CP 271
+  { name: "Danvikstull",       lat: 59.31392, lng: 18.10344, group: "city" }, // CP 272
+  { name: "Skansbron",         lat: 59.30403, lng: 18.07943, group: "city" }, // CP 281
+  { name: "Skansbron",         lat: 59.30404, lng: 18.07942, group: "city" }, // CP 282
+  { name: "Skanstullsbron",    lat: 59.30633, lng: 18.07747, group: "city" }, // CP 291
+  { name: "Skanstullsbron",    lat: 59.30630, lng: 18.07727, group: "city" }, // CP 292
+  { name: "Johanneshovsbron",  lat: 59.30381, lng: 18.07720, group: "city" }, // CP 301
+  { name: "Johanneshovsbron",  lat: 59.30378, lng: 18.07705, group: "city" }, // CP 302
+  { name: "Liljeholmsbron",    lat: 59.31144, lng: 18.02883, group: "city" }, // CP 311
   { name: "Liljeholmsbron",    lat: 59.31196, lng: 18.02922, group: "city" }, // CP 312
-  { name: "Ekelundsbron",      lat: 59.34062, lng: 18.01293, group: "city" }, // CP 361/362, centroid  2 m
-  { name: "Klarastrandsleden", lat: 59.33879, lng: 18.02992, group: "city" }, // CP 371/372, centroid  5 m
-  { name: "Tomtebodavägen",    lat: 59.34372, lng: 18.02615, group: "city" }, // CP 381/382, centroid 10 m
-  { name: "Solnabron",         lat: 59.34659, lng: 18.03225, group: "city" }, // CP 391,  24 m mellan sensorerna
+  { name: "Ekelundsbron",      lat: 59.34062, lng: 18.01293, group: "city" }, // CP 361
+  { name: "Ekelundsbron",      lat: 59.34061, lng: 18.01292, group: "city" }, // CP 362
+  { name: "Klarastrandsleden", lat: 59.33877, lng: 18.02990, group: "city" }, // CP 371
+  { name: "Klarastrandsleden", lat: 59.33881, lng: 18.02994, group: "city" }, // CP 372
+  { name: "Tomtebodavägen",    lat: 59.34368, lng: 18.02609, group: "city" }, // CP 381
+  { name: "Tomtebodavägen",    lat: 59.34375, lng: 18.02620, group: "city" }, // CP 382
+  { name: "Solnabron",         lat: 59.34659, lng: 18.03225, group: "city" }, // CP 391
   { name: "Solnabron",         lat: 59.34680, lng: 18.03213, group: "city" }, // CP 392
-  { name: "Norrtull",          lat: 59.34976, lng: 18.04264, group: "city" }, // CP 401, 113 m mellan sensorerna
+  { name: "Norrtull",          lat: 59.34976, lng: 18.04264, group: "city" }, // CP 401
   { name: "Norrtull",          lat: 59.35040, lng: 18.04396, group: "city" }, // CP 402
-  { name: "Ekhagen",           lat: 59.37114, lng: 18.05030, group: "city" }, // CP 411,  47 m mellan sensorerna
+  { name: "Norrtull",          lat: 59.34971, lng: 18.04250, group: "city" }, // CP 403
+  { name: "Ekhagen",           lat: 59.37114, lng: 18.05030, group: "city" }, // CP 411
   { name: "Ekhagen",           lat: 59.37142, lng: 18.05086, group: "city" }, // CP 412
-  { name: "Frescati",          lat: 59.36562, lng: 18.05246, group: "city" }, // CP 421/422, centroid  2 m
-  { name: "Universitetet",     lat: 59.36298, lng: 18.05463, group: "city" }, // CP 431,  36 m mellan sensorerna
+  { name: "Ekhagen",           lat: 59.36935, lng: 18.05155, group: "city" }, // CP 413
+  { name: "Ekhagen",           lat: 59.36949, lng: 18.05069, group: "city" }, // CP 414
+  { name: "Frescati",          lat: 59.36562, lng: 18.05248, group: "city" }, // CP 421
+  { name: "Frescati",          lat: 59.36562, lng: 18.05245, group: "city" }, // CP 422
+  { name: "Universitetet",     lat: 59.36298, lng: 18.05463, group: "city" }, // CP 431
   { name: "Universitetet",     lat: 59.36311, lng: 18.05520, group: "city" }, // CP 432
-  { name: "Roslagstull",       lat: 59.35277, lng: 18.05801, group: "city" }, // CP 441,  52 m mellan sensorerna
+  { name: "Roslagstull",       lat: 59.35277, lng: 18.05801, group: "city" }, // CP 441
   { name: "Roslagstull",       lat: 59.35248, lng: 18.05873, group: "city" }, // CP 442
-  { name: "Ropsten",           lat: 59.35662, lng: 18.10505, group: "city" }, // CP 461/462, 159 m till andra paret
-  { name: "Ropsten",           lat: 59.35694, lng: 18.10241, group: "city" }, // CP 463/464
-  { name: "Värtan",            lat: 59.35131, lng: 18.09545, group: "city" }, // CP 451/452, 657 m till andra klustret
-  { name: "Värtan",            lat: 59.35232, lng: 18.10652, group: "city" }, // CP 453/454/456
-  { name: "Hälsingegatan",     lat: 59.34907, lng: 18.03623, group: "city" }, // CP 471/472, centroid  3 m
-  { name: "Hagastaden",        lat: 59.34768, lng: 18.03305, group: "city" }, // CP 473/474, centroid  3 m
+  { name: "Värtan",            lat: 59.35120, lng: 18.09525, group: "city" }, // CP 451
+  { name: "Värtan",            lat: 59.35142, lng: 18.09564, group: "city" }, // CP 452
+  { name: "Värtan",            lat: 59.35259, lng: 18.10646, group: "city" }, // CP 453
+  { name: "Värtan",            lat: 59.35179, lng: 18.10658, group: "city" }, // CP 454
+  { name: "Värtan",            lat: 59.35079, lng: 18.09934, group: "city" }, // CP 455
+  { name: "Värtan",            lat: 59.35259, lng: 18.10651, group: "city" }, // CP 456
+  { name: "Ropsten",           lat: 59.35659, lng: 18.10511, group: "city" }, // CP 461
+  { name: "Ropsten",           lat: 59.35665, lng: 18.10499, group: "city" }, // CP 462
+  { name: "Ropsten",           lat: 59.35697, lng: 18.10243, group: "city" }, // CP 463
+  { name: "Ropsten",           lat: 59.35690, lng: 18.10238, group: "city" }, // CP 464
+  { name: "Hälsingegatan",     lat: 59.34909, lng: 18.03621, group: "city" }, // CP 471
+  { name: "Hälsingegatan",     lat: 59.34905, lng: 18.03624, group: "city" }, // CP 472
+  { name: "Hagastaden",        lat: 59.34769, lng: 18.03304, group: "city" }, // CP 473
+  { name: "Hagastaden",        lat: 59.34767, lng: 18.03306, group: "city" }, // CP 474
 
   // ── Essingeleden — max en avgift per passage oavsett antal stationer ───────
-  { name: "Stora Essingen",    lat: 59.32290, lng: 17.99668, group: "essingeleden" }, // CP 321/322, 96 m till sensor 323
+  { name: "Stora Essingen",    lat: 59.32290, lng: 17.99668, group: "essingeleden" }, // CP 321
+  { name: "Stora Essingen",    lat: 59.32289, lng: 17.99657, group: "essingeleden" }, // CP 322
   { name: "Stora Essingen",    lat: 59.32206, lng: 17.99630, group: "essingeleden" }, // CP 323
-  { name: "Lilla Essingen",    lat: 59.32511, lng: 18.00399, group: "essingeleden" }, // CP 332 (var fel "Tranebergsbron")
-  { name: "Fredhäll",          lat: 59.33119, lng: 18.01097, group: "essingeleden" }, // CP 341,  40 m mellan sensorerna
+  { name: "Lilla Essingen",    lat: 59.32511, lng: 18.00399, group: "essingeleden" }, // CP 332
+  { name: "Fredhäll",          lat: 59.33119, lng: 18.01097, group: "essingeleden" }, // CP 341
   { name: "Fredhäll",          lat: 59.33150, lng: 18.01059, group: "essingeleden" }, // CP 342
-  { name: "Kristineberg",      lat: 59.33645, lng: 18.01029, group: "essingeleden" }, // CP 351,  45 m mellan sensorerna
+  { name: "Fredhäll",          lat: 59.33067, lng: 18.01054, group: "essingeleden" }, // CP 343
+  { name: "Fredhäll",          lat: 59.33136, lng: 18.01065, group: "essingeleden" }, // CP 344
+  { name: "Fredhäll",          lat: 59.33126, lng: 18.00894, group: "essingeleden" }, // CP 345
+  { name: "Fredhäll",          lat: 59.33166, lng: 18.01056, group: "essingeleden" }, // CP 346
+  { name: "Fredhäll",          lat: 59.33373, lng: 18.00973, group: "essingeleden" }, // CP 347
+  { name: "Fredhäll",          lat: 59.33372, lng: 18.00990, group: "essingeleden" }, // CP 348
+  { name: "Kristineberg",      lat: 59.33645, lng: 18.01029, group: "essingeleden" }, // CP 351
   { name: "Kristineberg",      lat: 59.33618, lng: 18.01082, group: "essingeleden" }, // CP 352
+  { name: "Kristineberg",      lat: 59.33372, lng: 18.01009, group: "essingeleden" }, // CP 353
+  { name: "Kristineberg",      lat: 59.33374, lng: 18.00950, group: "essingeleden" }, // CP 354
 ];
 
 const DETECTION_RADIUS_M = 10;
