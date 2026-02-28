@@ -1,6 +1,6 @@
-// Milersättning: Skatteverkets schablonbelopp (kr/km)
-// 25 SEK/mil = 2.50 SEK/km
-let MILEAGE_RATE = 2.50;
+// --- Persistent settings ---
+let settings     = loadSettings();
+let MILEAGE_RATE = settings.mileageRate;
 
 // --- State ---
 let map, polyline, posMarker;
@@ -16,9 +16,27 @@ let wakeLock     = null;
 let selectionMode   = false;
 let selectedTripIds = new Set();
 
+// --- Settings persistence ---
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem("korjournal_settings") || "{}");
+    return {
+      mileageRate:    s.mileageRate    ?? 2.50,
+      mapZoom:        s.mapZoom        ?? 12,
+      mapOrientation: s.mapOrientation ?? "north",
+    };
+  } catch {
+    return { mileageRate: 2.50, mapZoom: 12, mapOrientation: "north" };
+  }
+}
+
+function saveSettings() {
+  localStorage.setItem("korjournal_settings", JSON.stringify(settings));
+}
+
 // --- Map init ---
 function initMap() {
-  map = L.map("map", { zoomControl: false }).setView([59.334, 18.065], 12);
+  map = L.map("map", { zoomControl: false }).setView([59.334, 18.065], settings.mapZoom);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap",
     maxZoom: 19,
@@ -87,7 +105,7 @@ function stopRecording() {
 
 // --- GPS callback ---
 function onPosition(pos) {
-  const { latitude: lat, longitude: lng } = pos.coords;
+  const { latitude: lat, longitude: lng, heading } = pos.coords;
   const timestamp = new Date(pos.timestamp);
 
   // Position marker
@@ -100,6 +118,11 @@ function onPosition(pos) {
     posMarker.setLatLng([lat, lng]);
   }
   map.panTo([lat, lng]);
+
+  // Kartorientering — kurs upp
+  if (settings.mapOrientation === "heading" && heading != null && !isNaN(heading)) {
+    document.getElementById("map").style.transform = `rotate(${-heading}deg)`;
+  }
 
   if (!recording) return;
 
@@ -492,13 +515,32 @@ document.addEventListener("visibilitychange", () => {
 });
 
 // --- Settings ---
-function applyRate() {
+function resetMapRotation() {
+  document.getElementById("map").style.transform = "";
+}
+
+function applySettings() {
   const val = parseFloat(document.getElementById("rate-input").value);
   if (!isNaN(val) && val > 0) {
     MILEAGE_RATE = val;
-    document.getElementById("settings-panel").style.display = "none";
-    showToast(`Milersättning: ${val.toFixed(2)} kr/km`);
+    settings.mileageRate = val;
   }
+
+  const orient = document.getElementById("orientation-select").value;
+  if (orient !== settings.mapOrientation) {
+    settings.mapOrientation = orient;
+    if (orient === "north") resetMapRotation();
+  }
+
+  const zoom = parseInt(document.getElementById("zoom-select").value);
+  if (!isNaN(zoom)) {
+    settings.mapZoom = zoom;
+    map.setZoom(zoom);
+  }
+
+  saveSettings();
+  document.getElementById("settings-panel").style.display = "none";
+  showToast("Inställningar sparade");
 }
 
 // --- Helpers ---
@@ -562,10 +604,12 @@ document.getElementById("export-btn").addEventListener("click", exportCSV);
 
 document.getElementById("settings-btn").addEventListener("click", () => {
   document.getElementById("rate-input").value = MILEAGE_RATE.toFixed(2);
+  document.getElementById("zoom-select").value = settings.mapZoom;
+  document.getElementById("orientation-select").value = settings.mapOrientation;
   const panel = document.getElementById("settings-panel");
   panel.style.display = panel.style.display === "none" ? "block" : "none";
 });
-document.getElementById("rate-apply").addEventListener("click", applyRate);
+document.getElementById("rate-apply").addEventListener("click", applySettings);
 
 document.getElementById("select-mode-btn").addEventListener("click", toggleSelectionMode);
 

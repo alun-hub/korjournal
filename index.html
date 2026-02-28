@@ -73,7 +73,8 @@
       margin-bottom: 6px;
     }
 
-    #settings-panel input {
+    #settings-panel input,
+    #settings-panel select {
       width: 100%;
       background: #0d0f14;
       border: 1px solid #2a2e3a;
@@ -83,6 +84,7 @@
       font-size: 1rem;
       outline: none;
       margin-bottom: 8px;
+      appearance: none;
     }
 
     #rate-apply {
@@ -564,6 +566,18 @@
     <div id="settings-panel">
       <label>Milersättning (kr/km)<br><small style="color:#556">Skatteverket: 2.50 kr/km</small></label>
       <input type="number" id="rate-input" value="2.50" step="0.05" min="0.1">
+      <label>Startzoom</label>
+      <select id="zoom-select">
+        <option value="11">11 — Stadsdel</option>
+        <option value="12" selected>12 — Stad</option>
+        <option value="13">13 — Kvarter</option>
+        <option value="15">15 — Gata</option>
+      </select>
+      <label>Kartorientering</label>
+      <select id="orientation-select">
+        <option value="north" selected>Nord upp</option>
+        <option value="heading">Kurs upp (GPS)</option>
+      </select>
       <button id="rate-apply">Spara</button>
     </div>
   </div>
