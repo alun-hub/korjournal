@@ -482,7 +482,9 @@ function populateQuickSelect() {
   allBtn.className = "qs-btn";
   allBtn.textContent = "Alla";
   allBtn.addEventListener("click", () => {
-    trips.forEach(t => selectedTripIds.add(t.id));
+    const allIds = trips.map(t => t.id);
+    const allSelected = allIds.every(id => selectedTripIds.has(id));
+    allIds.forEach(id => allSelected ? selectedTripIds.delete(id) : selectedTripIds.add(id));
     renderTripList();
     updateSelectionFooter();
   });
@@ -497,7 +499,9 @@ function populateQuickSelect() {
     btn.className = "qs-btn";
     btn.textContent = label;
     btn.addEventListener("click", () => {
-      trips.filter(t => t.startTime.startsWith(k)).forEach(t => selectedTripIds.add(t.id));
+      const monthIds = trips.filter(t => t.startTime.startsWith(k)).map(t => t.id);
+      const allSelected = monthIds.every(id => selectedTripIds.has(id));
+      monthIds.forEach(id => allSelected ? selectedTripIds.delete(id) : selectedTripIds.add(id));
       renderTripList();
       updateSelectionFooter();
     });
@@ -845,6 +849,22 @@ document.getElementById("btn-save").addEventListener("click", saveTrip);
 document.getElementById("btn-discard").addEventListener("click", discardTrip);
 document.getElementById("export-btn").addEventListener("click", exportCSV);
 
+function populateTimeSelects() {
+  ["sched-start", "sched-end"].forEach(id => {
+    const sel = document.getElementById(id);
+    if (sel.options.length > 0) return;
+    for (let h = 0; h < 24; h++) {
+      for (const m of [0, 30]) {
+        const val = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+        const opt = document.createElement("option");
+        opt.value = val;
+        opt.textContent = val;
+        sel.appendChild(opt);
+      }
+    }
+  });
+}
+
 document.getElementById("settings-btn").addEventListener("click", () => {
   document.getElementById("rate-input").value = MILEAGE_RATE.toFixed(2);
   document.getElementById("zoom-select").value = settings.mapZoom;
@@ -852,6 +872,7 @@ document.getElementById("settings-btn").addEventListener("click", () => {
   document.querySelectorAll(".day-btn").forEach(btn => {
     btn.classList.toggle("active", settings.schedule.businessDays.includes(parseInt(btn.dataset.day)));
   });
+  populateTimeSelects();
   document.getElementById("sched-start").value = settings.schedule.startTime;
   document.getElementById("sched-end").value   = settings.schedule.endTime;
   const panel = document.getElementById("settings-panel");

@@ -26,7 +26,7 @@
     #map {
       position: absolute;
       top: 0; left: 0; right: 0;
-      bottom: 214px;
+      bottom: 200px;
     }
 
     /* ── Top buttons ── */
@@ -122,13 +122,13 @@
     #panel {
       position: absolute;
       bottom: 0; left: 0; right: 0;
-      height: 214px;
+      height: 200px;
       background: #141820;
       border-top: 1px solid #2a2e3a;
-      padding: 10px 16px 14px;
+      padding: 8px 16px 12px;
       display: flex;
       flex-direction: column;
-      gap: 7px;
+      gap: 6px;
     }
 
     #status-bar {
@@ -372,7 +372,7 @@
     /* ── Toast ── */
     .toast {
       position: fixed;
-      bottom: 232px;
+      bottom: 218px;
       left: 50%;
       transform: translateX(-50%);
       background: #1c2030;
@@ -672,7 +672,7 @@
       margin-bottom: 8px;
     }
 
-    #sched-times input {
+    #sched-times select {
       flex: 1;
       margin-bottom: 0;
     }
@@ -878,8 +878,8 @@
           <button class="day-btn" data-day="0">Sön</button>
         </div>
         <div id="sched-times">
-          <input type="time" id="sched-start" value="07:00">
-          <input type="time" id="sched-end" value="18:00">
+          <select id="sched-start"></select>
+          <select id="sched-end"></select>
         </div>
       </div>
       <div id="settings-footer">
