@@ -12,6 +12,9 @@ let timerInterval= null;
 let lastPos      = null;
 let wakeLock     = null;
 
+// Trip type
+let currentTripType = "tjänst";
+
 // Selection state
 let selectionMode   = false;
 let selectedTripIds = new Set();
@@ -24,14 +27,37 @@ function loadSettings() {
       mileageRate:    s.mileageRate    ?? 2.50,
       mapZoom:        s.mapZoom        ?? 12,
       mapOrientation: s.mapOrientation ?? "north",
+      schedule: {
+        businessDays: s.schedule?.businessDays ?? [1, 2, 3, 4, 5],
+        startTime:    s.schedule?.startTime    ?? "07:00",
+        endTime:      s.schedule?.endTime      ?? "18:00",
+      },
     };
   } catch {
-    return { mileageRate: 2.50, mapZoom: 12, mapOrientation: "north" };
+    return {
+      mileageRate: 2.50, mapZoom: 12, mapOrientation: "north",
+      schedule: { businessDays: [1, 2, 3, 4, 5], startTime: "07:00", endTime: "18:00" },
+    };
   }
 }
 
 function saveSettings() {
   localStorage.setItem("korjournal_settings", JSON.stringify(settings));
+}
+
+function getDefaultTripType() {
+  const now  = new Date();
+  const day  = now.getDay();
+  const hhmm = now.toTimeString().slice(0, 5);
+  const { businessDays, startTime, endTime } = settings.schedule;
+  return (businessDays.includes(day) && hhmm >= startTime && hhmm < endTime)
+    ? "tjänst" : "privat";
+}
+
+function setTripType(type) {
+  currentTripType = type;
+  document.getElementById("type-privat").classList.toggle("active", type === "privat");
+  document.getElementById("type-tjänst").classList.toggle("active", type === "tjänst");
 }
 
 // --- Map init ---
@@ -60,6 +86,7 @@ function startRecording() {
     passages:    [],
     totalToll:   0,
     note:        "",
+    type:        currentTripType,
   };
   taxTracker = new CongestionTaxTracker();
   lastPos    = null;
@@ -241,9 +268,12 @@ function renderTripList() {
         ).join("")}</div>`
       : "";
 
+    const tripType  = t.type || "tjänst";
+    const typeBadge = `<span class="type-badge ${tripType}">${tripType === "tjänst" ? "Tjänst" : "Privat"}</span>`;
+
     const cardContent = `
       <div class="trip-card-content">
-        <div class="trip-meta">${dateStr} · ${timeStr}</div>
+        <div class="trip-meta">${dateStr} · ${timeStr}${typeBadge}</div>
         ${t.note ? `<div class="trip-note-label">${t.note}</div>` : ""}
         <div class="trip-row">
           <div>
@@ -284,7 +314,7 @@ function updateSummaryBar() {
 
 // --- CSV helpers ---
 function buildCSVRows(trips) {
-  const rows = [["Datum", "Starttid", "Sluttid", "Kilometer", "Milersättning (kr)", "Trängselskatt (kr)", "Totalt (kr)", "Anteckning"]];
+  const rows = [["Datum", "Starttid", "Sluttid", "Typ", "Kilometer", "Milersättning (kr)", "Trängselskatt (kr)", "Totalt (kr)", "Anteckning"]];
   for (const t of trips) {
     const start   = new Date(t.startTime);
     const end     = new Date(t.endTime);
@@ -293,6 +323,7 @@ function buildCSVRows(trips) {
       start.toLocaleDateString("sv-SE"),
       fmtTime(start),
       fmtTime(end),
+      (t.type || "tjänst") === "privat" ? "Privat" : "Tjänst",
       t.distanceKm.toFixed(1),
       mileage,
       t.totalToll,
@@ -538,7 +569,14 @@ function applySettings() {
     map.setZoom(zoom);
   }
 
+  const activeDays = Array.from(document.querySelectorAll(".day-btn.active"))
+    .map(btn => parseInt(btn.dataset.day));
+  settings.schedule.businessDays = activeDays;
+  settings.schedule.startTime = document.getElementById("sched-start").value || "07:00";
+  settings.schedule.endTime   = document.getElementById("sched-end").value   || "18:00";
+
   saveSettings();
+  setTripType(getDefaultTripType());
   document.getElementById("settings-panel").style.display = "none";
   showToast("Inställningar sparade");
 }
@@ -587,6 +625,112 @@ function resetUI() {
   setUiRecording(false);
 }
 
+// --- Month report ---
+function showMonthReport() {
+  const trips = getTrips();
+  const monthKeys = [...new Set(trips.map(t => t.startTime.slice(0, 7)))].sort().reverse();
+
+  const sel = document.getElementById("report-month-select");
+  while (sel.firstChild) sel.removeChild(sel.firstChild);
+
+  if (monthKeys.length === 0) {
+    const opt = document.createElement("option");
+    opt.value = "";
+    opt.textContent = "Inga resor";
+    sel.appendChild(opt);
+    document.getElementById("report-content").textContent = "";
+  } else {
+    monthKeys.forEach(k => {
+      const [year, month] = k.split("-");
+      const label = new Date(parseInt(year), parseInt(month) - 1, 1)
+        .toLocaleDateString("sv-SE", { year: "numeric", month: "long" });
+      const opt = document.createElement("option");
+      opt.value = k;
+      opt.textContent = label;
+      sel.appendChild(opt);
+    });
+    renderMonthReport(monthKeys[0]);
+  }
+
+  document.getElementById("report-modal").classList.add("show");
+}
+
+function closeMonthReport() {
+  document.getElementById("report-modal").classList.remove("show");
+}
+
+function renderMonthReport(monthKey) {
+  if (!monthKey) return;
+  const all = getTrips().filter(t => t.startTime.startsWith(monthKey));
+  const container = document.getElementById("report-content");
+  while (container.firstChild) container.removeChild(container.firstChild);
+
+  const byType = { "tjänst": [], "privat": [] };
+  for (const t of all) {
+    const key = (t.type || "tjänst") === "privat" ? "privat" : "tjänst";
+    byType[key].push(t);
+  }
+
+  function addSection(label, trips) {
+    if (trips.length === 0) return;
+    const section = document.createElement("div");
+    section.className = "report-section";
+
+    const title = document.createElement("div");
+    title.className = "report-section-title";
+    title.textContent = `${label} — ${trips.length} resa${trips.length !== 1 ? "r" : ""}`;
+    section.appendChild(title);
+
+    const km      = trips.reduce((s, t) => s + t.distanceKm, 0);
+    const mileage = trips.reduce((s, t) => s + Math.round(t.distanceKm * MILEAGE_RATE), 0);
+    const toll    = trips.reduce((s, t) => s + t.totalToll, 0);
+    const total   = mileage + toll;
+
+    const lines = [
+      ["Sträcka", `${km.toFixed(1)} km`],
+      ["Milersättning", `${mileage} kr`],
+    ];
+    if (toll > 0) lines.push(["Trängselskatt", `${toll} kr`]);
+    lines.push(["Delsumma", `${total} kr`]);
+
+    lines.forEach(([lbl, val], i) => {
+      const row = document.createElement("div");
+      row.className = "report-line";
+      if (i === lines.length - 1) row.style.fontWeight = "600";
+      const lspan = document.createElement("span");
+      lspan.className = "rl-label";
+      lspan.textContent = lbl;
+      const vspan = document.createElement("span");
+      vspan.textContent = val;
+      row.appendChild(lspan);
+      row.appendChild(vspan);
+      section.appendChild(row);
+    });
+
+    container.appendChild(section);
+  }
+
+  addSection("Tjänst", byType["tjänst"]);
+  addSection("Privat", byType["privat"]);
+
+  const totalTrips = all.length;
+  const totalKm    = all.reduce((s, t) => s + t.distanceKm, 0);
+  const totalKr    = all.reduce((s, t) => s + Math.round(t.distanceKm * MILEAGE_RATE) + t.totalToll, 0);
+
+  const summary = document.createElement("div");
+  summary.className = "report-total";
+  summary.textContent = `${totalTrips} resor · ${totalKm.toFixed(1)} km · ${totalKr} kr totalt`;
+  container.appendChild(summary);
+}
+
+function exportMonthCSV() {
+  const monthKey = document.getElementById("report-month-select").value;
+  if (!monthKey) return;
+  const trips = getTrips().filter(t => t.startTime.startsWith(monthKey));
+  if (trips.length === 0) return;
+  downloadCSV(buildCSVRows(trips), `korjournal_${monthKey}.csv`);
+}
+
 // --- Event listeners ---
 document.getElementById("record-btn").addEventListener("click", () => {
   recording ? stopRecording() : startRecording();
@@ -606,6 +750,11 @@ document.getElementById("settings-btn").addEventListener("click", () => {
   document.getElementById("rate-input").value = MILEAGE_RATE.toFixed(2);
   document.getElementById("zoom-select").value = settings.mapZoom;
   document.getElementById("orientation-select").value = settings.mapOrientation;
+  document.querySelectorAll(".day-btn").forEach(btn => {
+    btn.classList.toggle("active", settings.schedule.businessDays.includes(parseInt(btn.dataset.day)));
+  });
+  document.getElementById("sched-start").value = settings.schedule.startTime;
+  document.getElementById("sched-end").value   = settings.schedule.endTime;
   const panel = document.getElementById("settings-panel");
   panel.style.display = panel.style.display === "none" ? "block" : "none";
 });
@@ -655,8 +804,23 @@ document.getElementById("sel-export-btn").addEventListener("click", exportSelect
 document.getElementById("sel-share-btn").addEventListener("click", shareSelectedTrip);
 document.getElementById("sel-delete-btn").addEventListener("click", deleteSelectedTrips);
 
+document.getElementById("type-privat").addEventListener("click", () => setTripType("privat"));
+document.getElementById("type-tjänst").addEventListener("click", () => setTripType("tjänst"));
+
+document.getElementById("report-btn").addEventListener("click", showMonthReport);
+document.getElementById("report-close-btn").addEventListener("click", closeMonthReport);
+document.getElementById("report-export-btn").addEventListener("click", exportMonthCSV);
+document.getElementById("report-month-select").addEventListener("change", e => renderMonthReport(e.target.value));
+
+document.getElementById("sched-days").addEventListener("click", e => {
+  const btn = e.target.closest(".day-btn");
+  if (btn) btn.classList.toggle("active");
+});
+
 // --- Init ---
 initMap();
+currentTripType = getDefaultTripType();
+setTripType(currentTripType);
 
 // --- Service Worker ---
 if ("serviceWorker" in navigator) {

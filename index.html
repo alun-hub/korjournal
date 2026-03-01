@@ -26,7 +26,7 @@
     #map {
       position: absolute;
       top: 0; left: 0; right: 0;
-      bottom: 220px;
+      bottom: 240px;
     }
 
     /* ── Top buttons ── */
@@ -105,7 +105,7 @@
     #panel {
       position: absolute;
       bottom: 0; left: 0; right: 0;
-      height: 220px;
+      height: 240px;
       background: #141820;
       border-top: 1px solid #2a2e3a;
       padding: 14px 16px;
@@ -355,7 +355,7 @@
     /* ── Toast ── */
     .toast {
       position: fixed;
-      bottom: 238px;
+      bottom: 258px;
       left: 50%;
       transform: translateX(-50%);
       background: #1c2030;
@@ -547,9 +547,238 @@
       color: #99a;
     }
 
+    /* ── Type selector ── */
+    #type-selector {
+      display: flex;
+      gap: 6px;
+    }
+
+    .type-btn {
+      flex: 1;
+      padding: 7px;
+      border: 1px solid #2a2e3a;
+      border-radius: 8px;
+      background: #1c2030;
+      color: #99a;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 36px;
+      touch-action: manipulation;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .type-btn.active {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      color: #fff;
+    }
+
+    /* ── Type badge ── */
+    .type-badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 4px;
+      margin-left: 5px;
+      vertical-align: middle;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .type-badge.tjänst {
+      background: #1e3a5f;
+      color: #7ab8f5;
+    }
+
+    .type-badge.privat {
+      background: #2d1b4a;
+      color: #b896f5;
+    }
+
+    /* ── Settings panel — scrollable ── */
+    #settings-panel {
+      overflow-y: auto;
+      max-height: calc(100vh - 280px);
+    }
+
+    /* ── Schedule section ── */
+    .settings-sep {
+      border: none;
+      border-top: 1px solid #2a2e3a;
+      margin: 10px 0;
+    }
+
+    #sched-days {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .day-btn {
+      flex: 1;
+      min-width: 28px;
+      padding: 5px 2px;
+      border: 1px solid #2a2e3a;
+      border-radius: 5px;
+      background: #0d0f14;
+      color: #778;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      touch-action: manipulation;
+    }
+
+    .day-btn.active {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      color: #fff;
+    }
+
+    #sched-times {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    #sched-times input {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    /* ── History footer — two buttons ── */
+    #history-footer {
+      display: flex;
+      gap: 8px;
+    }
+
+    #report-btn, #export-btn {
+      flex: 1;
+      padding: 13px 8px;
+      background: #1c2030;
+      border: 1px solid #2a2e3a;
+      border-radius: 10px;
+      color: #ccd;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+
+    /* ── Report modal ── */
+    #report-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 1300;
+      align-items: flex-end;
+    }
+
+    #report-modal.show { display: flex; }
+
+    #report-sheet {
+      background: #141820;
+      border-radius: 20px 20px 0 0;
+      padding: 20px 20px 32px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .report-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #report-close-btn {
+      background: none;
+      border: none;
+      color: #99a;
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 4px 8px;
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+
+    .report-month-select {
+      width: 100%;
+      background: #0d0f14;
+      border: 1px solid #2a2e3a;
+      border-radius: 6px;
+      color: #dde;
+      padding: 8px 10px;
+      font-size: 0.95rem;
+      outline: none;
+      appearance: none;
+    }
+
+    #report-content {
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .report-section {
+      margin-bottom: 14px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #1c2030;
+    }
+
+    .report-section:last-child { border-bottom: none; }
+
+    .report-section-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #99a;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+
+    .report-line {
+      display: flex;
+      justify-content: space-between;
+      color: #ccd;
+      padding: 2px 0;
+    }
+
+    .report-line .rl-label { color: #778; }
+
+    .report-total {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #22c55e;
+      padding-top: 10px;
+      border-top: 1px solid #2a2e3a;
+      margin-top: 4px;
+    }
+
+    #report-export-btn {
+      width: 100%;
+      padding: 13px;
+      background: #3b82f6;
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+
     /* ── Responsive bottom panel ── */
     @media (max-width: 390px) {
-      #panel { padding: 10px 12px; gap: 8px; }
+      #panel { padding: 10px 12px; gap: 6px; }
       .stat-value { font-size: 1.15rem; }
       .stat-label { font-size: 0.65rem; }
     }
@@ -578,6 +807,21 @@
         <option value="north" selected>Nord upp</option>
         <option value="heading">Kurs upp (GPS)</option>
       </select>
+      <hr class="settings-sep">
+      <label>Arbetstider <small style="color:#556">(standard: Tjänst)</small></label>
+      <div id="sched-days">
+        <button class="day-btn" data-day="1">Mån</button>
+        <button class="day-btn" data-day="2">Tis</button>
+        <button class="day-btn" data-day="3">Ons</button>
+        <button class="day-btn" data-day="4">Tor</button>
+        <button class="day-btn" data-day="5">Fre</button>
+        <button class="day-btn" data-day="6">Lör</button>
+        <button class="day-btn" data-day="0">Sön</button>
+      </div>
+      <div id="sched-times">
+        <input type="time" id="sched-start" value="07:00">
+        <input type="time" id="sched-end" value="18:00">
+      </div>
       <button id="rate-apply">Spara</button>
     </div>
   </div>
@@ -604,6 +848,11 @@
       <div class="stat-label">Trängselskatt</div>
       <div class="stat-value"><span id="stat-toll">0</span><span class="stat-unit"> kr</span></div>
     </div>
+  </div>
+
+  <div id="type-selector">
+    <button id="type-privat" class="type-btn">Privat</button>
+    <button id="type-tjänst" class="type-btn active">Tjänst</button>
   </div>
 
   <button id="record-btn" class="idle">Starta körning</button>
@@ -662,7 +911,8 @@
   <div id="history-summary-bar"></div>
   <div id="trip-list"></div>
   <div id="history-footer">
-    <button id="export-btn">Exportera som CSV</button>
+    <button id="report-btn">Månadsrapport</button>
+    <button id="export-btn">Exportera CSV</button>
   </div>
   <div id="selection-footer">
     <button id="sel-export-btn">Exportera (0)</button>
@@ -676,6 +926,20 @@
   <div id="route-bar">
     <button id="route-back-btn">← Historik</button>
     <div id="route-info"></div>
+  </div>
+</div>
+
+<!-- Report modal -->
+<div id="report-modal">
+  <div id="report-sheet">
+    <div class="sheet-handle"></div>
+    <div class="report-modal-header">
+      <div class="summary-title">Månadsrapport</div>
+      <button id="report-close-btn">✕</button>
+    </div>
+    <select id="report-month-select" class="report-month-select"></select>
+    <div id="report-content"></div>
+    <button id="report-export-btn">Exportera månad som CSV</button>
   </div>
 </div>
 
