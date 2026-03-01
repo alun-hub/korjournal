@@ -106,7 +106,7 @@ function startRecording() {
   });
 }
 
-function stopRecording() {
+async function stopRecording() {
   recording = false;
 
   if (watchId !== null) {
@@ -126,6 +126,19 @@ function stopRecording() {
   currentTrip.endTime   = new Date().toISOString();
   currentTrip.passages  = taxTracker.passages;
   currentTrip.totalToll = taxTracker.getTotal();
+
+  // Geocoda start- och stoppposition (max 4 s, annars fortsätt utan)
+  const pts   = currentTrip.points;
+  const first = pts[0];
+  const last  = pts[pts.length - 1];
+  const timeout = ms => new Promise(r => setTimeout(() => r(null), ms));
+
+  const [startAddress, endAddress] = await Promise.all([
+    Promise.race([geocode(first.lat, first.lng), timeout(4000)]),
+    Promise.race([geocode(last.lat,  last.lng),  timeout(4000)]),
+  ]);
+  currentTrip.startAddress = startAddress;
+  currentTrip.endAddress   = endAddress;
 
   showSummary(currentTrip);
 }
@@ -200,6 +213,16 @@ function showSummary(trip) {
 
   document.getElementById("sum-date").textContent    = dateStr;
   document.getElementById("sum-time").textContent    = timeStr;
+
+  const addrSection = document.getElementById("sum-addr-section");
+  if (trip.startAddress || trip.endAddress) {
+    addrSection.style.display = "";
+    document.getElementById("sum-from").textContent = trip.startAddress || "—";
+    document.getElementById("sum-to").textContent   = trip.endAddress   || "—";
+  } else {
+    addrSection.style.display = "none";
+  }
+
   document.getElementById("sum-km").textContent      = `${km} km`;
   document.getElementById("sum-mileage").textContent = `${mileage} kr  (${MILEAGE_RATE.toFixed(2)} kr/km)`;
   document.getElementById("sum-total").textContent   = `${total} kr`;
@@ -271,9 +294,14 @@ function renderTripList() {
     const tripType  = t.type || "tjänst";
     const typeBadge = `<span class="type-badge ${tripType}">${tripType === "tjänst" ? "Tjänst" : "Privat"}</span>`;
 
+    const addrPlaceholder = (t.startAddress || t.endAddress)
+      ? `<div class="trip-addr" data-id="${t.id}"></div>`
+      : "";
+
     const cardContent = `
       <div class="trip-card-content">
         <div class="trip-meta">${dateStr} · ${timeStr}${typeBadge}</div>
+        ${addrPlaceholder}
         ${t.note ? `<div class="trip-note-label">${t.note}</div>` : ""}
         <div class="trip-row">
           <div>
@@ -299,6 +327,14 @@ function renderTripList() {
       return `<div class="trip-card" data-id="${t.id}">${cardContent}</div>`;
     }
   }).join("");
+
+  // Adresser sätts via textContent (externt API-innehåll)
+  const tripMap = Object.fromEntries(trips.map(t => [t.id, t]));
+  list.querySelectorAll(".trip-addr[data-id]").forEach(el => {
+    const t = tripMap[Number(el.dataset.id)];
+    if (!t) return;
+    el.textContent = [t.startAddress, t.endAddress].filter(Boolean).join(" → ");
+  });
 }
 
 // --- Summary bar ---
@@ -314,7 +350,7 @@ function updateSummaryBar() {
 
 // --- CSV helpers ---
 function buildCSVRows(trips) {
-  const rows = [["Datum", "Starttid", "Sluttid", "Typ", "Kilometer", "Milersättning (kr)", "Trängselskatt (kr)", "Totalt (kr)", "Anteckning"]];
+  const rows = [["Datum", "Starttid", "Sluttid", "Typ", "Startadress", "Slutadress", "Kilometer", "Milersättning (kr)", "Trängselskatt (kr)", "Totalt (kr)", "Anteckning"]];
   for (const t of trips) {
     const start   = new Date(t.startTime);
     const end     = new Date(t.endTime);
@@ -324,6 +360,8 @@ function buildCSVRows(trips) {
       fmtTime(start),
       fmtTime(end),
       (t.type || "tjänst") === "privat" ? "Privat" : "Tjänst",
+      t.startAddress || "",
+      t.endAddress   || "",
       t.distanceKm.toFixed(1),
       mileage,
       t.totalToll,
@@ -594,6 +632,21 @@ function haversineM(lat1, lng1, lat2, lng2) {
 
 function fmtTime(d) {
   return d.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
+}
+
+async function geocode(lat, lng) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=sv`;
+    const res = await fetch(url, { headers: { "User-Agent": "Korjournal/1.0" } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const a = data.address || {};
+    const street = [a.road, a.house_number].filter(Boolean).join(" ");
+    const city   = a.city || a.town || a.village || a.municipality || "";
+    return street ? (city ? `${street}, ${city}` : street) : (data.display_name?.split(",")[0] || null);
+  } catch {
+    return null;
+  }
 }
 
 function showToast(msg, isError = false) {
