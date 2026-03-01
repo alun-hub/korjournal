@@ -263,6 +263,11 @@ function showHistory() {
   renderTripList();
   updateSummaryBar();
   document.getElementById("history-screen").style.display = "flex";
+  history.pushState({ screen: "history" }, "");
+}
+
+function closeHistory() {
+  document.getElementById("history-screen").style.display = "none";
 }
 
 function renderTripList() {
@@ -468,12 +473,46 @@ function deleteSelectedTrips() {
 }
 
 // --- Selection mode ---
+function populateQuickSelect() {
+  const trips = getTrips();
+  const bar = document.getElementById("quick-select-bar");
+  while (bar.firstChild) bar.removeChild(bar.firstChild);
+
+  const allBtn = document.createElement("button");
+  allBtn.className = "qs-btn";
+  allBtn.textContent = "Alla";
+  allBtn.addEventListener("click", () => {
+    trips.forEach(t => selectedTripIds.add(t.id));
+    renderTripList();
+    updateSelectionFooter();
+  });
+  bar.appendChild(allBtn);
+
+  const months = [...new Set(trips.map(t => t.startTime.slice(0, 7)))].sort().reverse();
+  months.forEach(k => {
+    const [year, month] = k.split("-");
+    const label = new Date(parseInt(year), parseInt(month) - 1, 1)
+      .toLocaleDateString("sv-SE", { month: "long", year: "numeric" });
+    const btn = document.createElement("button");
+    btn.className = "qs-btn";
+    btn.textContent = label;
+    btn.addEventListener("click", () => {
+      trips.filter(t => t.startTime.startsWith(k)).forEach(t => selectedTripIds.add(t.id));
+      renderTripList();
+      updateSelectionFooter();
+    });
+    bar.appendChild(btn);
+  });
+}
+
 function enterSelectionMode() {
   selectionMode = true;
   selectedTripIds.clear();
   document.getElementById("select-mode-btn").classList.add("active");
   document.getElementById("history-footer").style.display = "none";
   document.getElementById("selection-footer").style.display = "flex";
+  populateQuickSelect();
+  document.getElementById("quick-select-bar").classList.add("show");
   renderTripList();
   updateSelectionFooter();
 }
@@ -484,6 +523,7 @@ function exitSelectionMode() {
   document.getElementById("select-mode-btn").classList.remove("active");
   document.getElementById("history-footer").style.display = "";
   document.getElementById("selection-footer").style.display = "none";
+  document.getElementById("quick-select-bar").classList.remove("show");
   renderTripList();
 }
 
@@ -615,7 +655,7 @@ function applySettings() {
 
   saveSettings();
   setTripType(getDefaultTripType());
-  document.getElementById("settings-panel").style.display = "none";
+  document.getElementById("settings-panel").classList.remove("open");
   showToast("Inställningar sparade");
 }
 
@@ -792,7 +832,13 @@ document.getElementById("record-btn").addEventListener("click", () => {
 document.getElementById("history-btn").addEventListener("click", showHistory);
 
 document.getElementById("back-btn").addEventListener("click", () => {
-  document.getElementById("history-screen").style.display = "none";
+  history.back();
+});
+
+window.addEventListener("popstate", () => {
+  if (document.getElementById("history-screen").style.display !== "none") {
+    closeHistory();
+  }
 });
 
 document.getElementById("btn-save").addEventListener("click", saveTrip);
@@ -809,7 +855,7 @@ document.getElementById("settings-btn").addEventListener("click", () => {
   document.getElementById("sched-start").value = settings.schedule.startTime;
   document.getElementById("sched-end").value   = settings.schedule.endTime;
   const panel = document.getElementById("settings-panel");
-  panel.style.display = panel.style.display === "none" ? "block" : "none";
+  panel.classList.toggle("open");
 });
 document.getElementById("rate-apply").addEventListener("click", applySettings);
 

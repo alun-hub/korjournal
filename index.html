@@ -26,7 +26,7 @@
     #map {
       position: absolute;
       top: 0; left: 0; right: 0;
-      bottom: 240px;
+      bottom: 214px;
     }
 
     /* ── Top buttons ── */
@@ -60,10 +60,27 @@
       background: #1c2030;
       border: 1px solid #2a2e3a;
       border-radius: 10px;
-      padding: 14px;
+      padding: 0;
       width: 220px;
       max-width: calc(100vw - 24px);
       z-index: 600;
+      max-height: calc(100vh - 120px);
+      display: none;
+      flex-direction: column;
+    }
+
+    #settings-panel.open { display: flex; }
+
+    #settings-scroll {
+      overflow-y: auto;
+      padding: 14px 14px 0;
+      flex: 1;
+      min-height: 0;
+    }
+
+    #settings-footer {
+      padding: 10px 14px 14px;
+      flex-shrink: 0;
     }
 
     #settings-panel label {
@@ -105,13 +122,13 @@
     #panel {
       position: absolute;
       bottom: 0; left: 0; right: 0;
-      height: 240px;
+      height: 214px;
       background: #141820;
       border-top: 1px solid #2a2e3a;
-      padding: 14px 16px;
+      padding: 10px 16px 14px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 7px;
     }
 
     #status-bar {
@@ -355,7 +372,7 @@
     /* ── Toast ── */
     .toast {
       position: fixed;
-      bottom: 258px;
+      bottom: 232px;
       left: 50%;
       transform: translateX(-50%);
       background: #1c2030;
@@ -614,12 +631,6 @@
       color: #b896f5;
     }
 
-    /* ── Settings panel — scrollable ── */
-    #settings-panel {
-      overflow-y: auto;
-      max-height: calc(100vh - 280px);
-    }
-
     /* ── Schedule section ── */
     .settings-sep {
       border: none;
@@ -793,9 +804,39 @@
       touch-action: manipulation;
     }
 
+    /* ── Quick select bar ── */
+    #quick-select-bar {
+      display: none;
+      flex-direction: row;
+      gap: 6px;
+      padding: 8px 16px;
+      overflow-x: auto;
+      border-bottom: 1px solid #1c2030;
+      flex-shrink: 0;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #quick-select-bar.show { display: flex; }
+
+    .qs-btn {
+      white-space: nowrap;
+      padding: 6px 14px;
+      border: 1px solid #2a2e3a;
+      border-radius: 20px;
+      background: #1c2030;
+      color: #ccd;
+      font-size: 0.82rem;
+      cursor: pointer;
+      min-height: 36px;
+      touch-action: manipulation;
+      flex-shrink: 0;
+    }
+
+    .qs-btn:active { background: #2a2e3a; }
+
     /* ── Responsive bottom panel ── */
     @media (max-width: 390px) {
-      #panel { padding: 10px 12px; gap: 6px; }
+      #panel { padding: 8px 12px 12px; gap: 6px; }
       .stat-value { font-size: 1.15rem; }
       .stat-label { font-size: 0.65rem; }
     }
@@ -810,36 +851,40 @@
   <div style="position: relative;">
     <button class="top-btn" id="settings-btn">⚙ Inställningar</button>
     <div id="settings-panel">
-      <label>Milersättning (kr/km)<br><small style="color:#556">Skatteverket: 2.50 kr/km</small></label>
-      <input type="number" id="rate-input" value="2.50" step="0.05" min="0.1">
-      <label>Startzoom</label>
-      <select id="zoom-select">
-        <option value="11">11 — Stadsdel</option>
-        <option value="12" selected>12 — Stad</option>
-        <option value="13">13 — Kvarter</option>
-        <option value="15">15 — Gata</option>
-      </select>
-      <label>Kartorientering</label>
-      <select id="orientation-select">
-        <option value="north" selected>Nord upp</option>
-        <option value="heading">Kurs upp (GPS)</option>
-      </select>
-      <hr class="settings-sep">
-      <label>Arbetstider <small style="color:#556">(standard: Tjänst)</small></label>
-      <div id="sched-days">
-        <button class="day-btn" data-day="1">Mån</button>
-        <button class="day-btn" data-day="2">Tis</button>
-        <button class="day-btn" data-day="3">Ons</button>
-        <button class="day-btn" data-day="4">Tor</button>
-        <button class="day-btn" data-day="5">Fre</button>
-        <button class="day-btn" data-day="6">Lör</button>
-        <button class="day-btn" data-day="0">Sön</button>
+      <div id="settings-scroll">
+        <label>Milersättning (kr/km)<br><small style="color:#556">Skatteverket: 2.50 kr/km</small></label>
+        <input type="number" id="rate-input" value="2.50" step="0.05" min="0.1">
+        <label>Startzoom</label>
+        <select id="zoom-select">
+          <option value="11">11 — Stadsdel</option>
+          <option value="12" selected>12 — Stad</option>
+          <option value="13">13 — Kvarter</option>
+          <option value="15">15 — Gata</option>
+        </select>
+        <label>Kartorientering</label>
+        <select id="orientation-select">
+          <option value="north" selected>Nord upp</option>
+          <option value="heading">Kurs upp (GPS)</option>
+        </select>
+        <hr class="settings-sep">
+        <label>Arbetstider <small style="color:#556">(standard: Tjänst)</small></label>
+        <div id="sched-days">
+          <button class="day-btn" data-day="1">Mån</button>
+          <button class="day-btn" data-day="2">Tis</button>
+          <button class="day-btn" data-day="3">Ons</button>
+          <button class="day-btn" data-day="4">Tor</button>
+          <button class="day-btn" data-day="5">Fre</button>
+          <button class="day-btn" data-day="6">Lör</button>
+          <button class="day-btn" data-day="0">Sön</button>
+        </div>
+        <div id="sched-times">
+          <input type="time" id="sched-start" value="07:00">
+          <input type="time" id="sched-end" value="18:00">
+        </div>
       </div>
-      <div id="sched-times">
-        <input type="time" id="sched-start" value="07:00">
-        <input type="time" id="sched-end" value="18:00">
+      <div id="settings-footer">
+        <button id="rate-apply">Spara</button>
       </div>
-      <button id="rate-apply">Spara</button>
     </div>
   </div>
   <button class="top-btn" id="history-btn">Historik</button>
@@ -931,6 +976,7 @@
     <button id="select-mode-btn">Markera</button>
   </div>
   <div id="history-summary-bar"></div>
+  <div id="quick-select-bar"></div>
   <div id="trip-list"></div>
   <div id="history-footer">
     <button id="report-btn">Månadsrapport</button>

@@ -1,4 +1,4 @@
-const CACHE_NAME = "korjournal-v10";
+const CACHE_NAME = "korjournal-v11";
 const APP_SHELL = [
   "./",
   "./index.html",
