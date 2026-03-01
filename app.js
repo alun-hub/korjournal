@@ -804,15 +804,15 @@ document.getElementById("sel-export-btn").addEventListener("click", exportSelect
 document.getElementById("sel-share-btn").addEventListener("click", shareSelectedTrip);
 document.getElementById("sel-delete-btn").addEventListener("click", deleteSelectedTrips);
 
-document.getElementById("type-privat").addEventListener("click", () => setTripType("privat"));
-document.getElementById("type-tjanst").addEventListener("click", () => setTripType("tjänst"));
+document.getElementById("type-privat")?.addEventListener("click", () => setTripType("privat"));
+document.getElementById("type-tjanst")?.addEventListener("click", () => setTripType("tjänst"));
 
-document.getElementById("report-btn").addEventListener("click", showMonthReport);
-document.getElementById("report-close-btn").addEventListener("click", closeMonthReport);
-document.getElementById("report-export-btn").addEventListener("click", exportMonthCSV);
-document.getElementById("report-month-select").addEventListener("change", e => renderMonthReport(e.target.value));
+document.getElementById("report-btn")?.addEventListener("click", showMonthReport);
+document.getElementById("report-close-btn")?.addEventListener("click", closeMonthReport);
+document.getElementById("report-export-btn")?.addEventListener("click", exportMonthCSV);
+document.getElementById("report-month-select")?.addEventListener("change", e => renderMonthReport(e.target.value));
 
-document.getElementById("sched-days").addEventListener("click", e => {
+document.getElementById("sched-days")?.addEventListener("click", e => {
   const btn = e.target.closest(".day-btn");
   if (btn) btn.classList.toggle("active");
 });
