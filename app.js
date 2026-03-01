@@ -57,7 +57,7 @@ function getDefaultTripType() {
 function setTripType(type) {
   currentTripType = type;
   document.getElementById("type-privat").classList.toggle("active", type === "privat");
-  document.getElementById("type-tjänst").classList.toggle("active", type === "tjänst");
+  document.getElementById("type-tjanst").classList.toggle("active", type === "tjänst");
 }
 
 // --- Map init ---
@@ -805,7 +805,7 @@ document.getElementById("sel-share-btn").addEventListener("click", shareSelected
 document.getElementById("sel-delete-btn").addEventListener("click", deleteSelectedTrips);
 
 document.getElementById("type-privat").addEventListener("click", () => setTripType("privat"));
-document.getElementById("type-tjänst").addEventListener("click", () => setTripType("tjänst"));
+document.getElementById("type-tjanst").addEventListener("click", () => setTripType("tjänst"));
 
 document.getElementById("report-btn").addEventListener("click", showMonthReport);
 document.getElementById("report-close-btn").addEventListener("click", closeMonthReport);
