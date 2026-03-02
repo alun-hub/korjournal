@@ -164,9 +164,14 @@ function onPosition(pos) {
   }
   map.panTo([lat, lng]);
 
-  // Kartorientering — kurs upp (scale(1.42) = √2, täcker hörnen vid alla vinklar)
+  // Kartorientering — kurs upp
+  // Skalfaktor = diagonal/kortaste_sidan, täcker hörnen för alla vinklar och skärmformat
   if (settings.mapOrientation === "heading" && heading != null && !isNaN(heading)) {
-    document.getElementById("map").style.transform = `rotate(${-heading}deg) scale(1.42)`;
+    const mapEl = document.getElementById("map");
+    const w = mapEl.offsetWidth  || window.innerWidth;
+    const h = mapEl.offsetHeight || window.innerHeight;
+    const scale = (Math.sqrt(w * w + h * h) / Math.min(w, h)).toFixed(3);
+    mapEl.style.transform = `rotate(${-heading}deg) scale(${scale})`;
   }
 
   // GPS-noggrannhet
