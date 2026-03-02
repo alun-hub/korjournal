@@ -1130,6 +1130,11 @@
   <div id="stats-content" style="flex:1; overflow-y:auto; padding:0 16px 24px;"></div>
 </div>
 
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js"));
+  }
+</script>
 <script src="leaflet.js"></script>
 <script src="congestion_tax.js"></script>
 <script src="app.js"></script>
