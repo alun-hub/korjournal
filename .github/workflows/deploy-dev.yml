@@ -18,4 +18,5 @@ jobs:
           external_repository: alun-hub/korjournal-dev
           publish_branch: main
           publish_dir: .
+          exclude_assets: 'CNAME'
           cname: test.korjournal.unixkonsult.se
