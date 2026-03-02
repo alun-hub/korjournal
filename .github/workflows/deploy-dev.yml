@@ -1,0 +1,21 @@
+name: Deploy till test (dev-branch)
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploya till korjournal-dev
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          personal_token: ${{ secrets.DEPLOY_TOKEN }}
+          external_repository: alun-hub/korjournal-dev
+          publish_branch: main
+          publish_dir: .
+          cname: test.korjournal.unixkonsult.se
