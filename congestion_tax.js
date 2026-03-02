@@ -313,7 +313,7 @@ class CongestionTaxTracker {
 
     for (const station of TOLL_STATIONS) {
       // Använd station.name + position som unik sensor-nyckel
-      const sensorKey = `${station.name}|${station.lat}|${station.lng}`;
+      const sensorKey = station.name;
       if (this.passedStations.has(sensorKey)) continue;
       if (ctHaversineM(lat, lng, station.lat, station.lng) > DETECTION_RADIUS_M) continue;
 
