@@ -72,8 +72,8 @@ function initMap() {
 
 // --- Toll station layer ---
 const TOLL_COLORS = {
-  city:         "#f59e0b",
-  essingeleden: "#f97316",
+  city:         "#ef4444",
+  essingeleden: "#a855f7",
   gbg:          "#3b82f6",
 };
 let tollLayer = null;
