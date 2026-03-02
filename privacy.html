@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Integritetspolicy — Körjournal</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0d0f14;
+      color: #ccd;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 32px 20px 64px;
+      line-height: 1.7;
+    }
+    h1 { font-size: 1.5rem; color: #dde; margin-bottom: 6px; }
+    h2 { font-size: 1.05rem; color: #dde; margin-top: 32px; margin-bottom: 8px; }
+    p, li { font-size: 0.95rem; color: #aab; }
+    ul { padding-left: 20px; }
+    li { margin-bottom: 4px; }
+    .meta { font-size: 0.82rem; color: #556; margin-bottom: 32px; }
+    a { color: #3b82f6; }
+    hr { border: none; border-top: 1px solid #1c2030; margin: 32px 0; }
+  </style>
+</head>
+<body>
+
+<h1>Integritetspolicy</h1>
+<p class="meta">Körjournal &nbsp;·&nbsp; Senast uppdaterad: 2026-03-02</p>
+
+<p>Körjournal är en personlig GPS-körjournal som körs lokalt i din webbläsare eller som installerad app på din enhet. Appen samlar inte in, lagrar inte och delar inte personuppgifter med någon extern part, med undantag för det som beskrivs nedan.</p>
+
+<h2>Data som behandlas</h2>
+<ul>
+  <li><strong>GPS-position</strong> — används för att spåra körningar i realtid. Positionsdata lagras enbart lokalt på din enhet (via webbläsarens localStorage) och skickas aldrig till någon server som vi driver.</li>
+  <li><strong>Adresser</strong> — när en körning avslutas skickas start- och stoppkoordinaterna till OpenStreetMap Nominatim (nominatim.openstreetmap.org) för omvänd geokodning. Inga personuppgifter utöver GPS-koordinaterna ingår i dessa anrop. Se <a href="https://nominatim.org/release-docs/latest/api/Reverse/" target="_blank">Nominatims policy</a>.</li>
+  <li><strong>Kartbilder</strong> — laddas från OpenStreetMap tile-servrar (tile.openstreetmap.org). Se <a href="https://wiki.osmfoundation.org/wiki/Privacy_Policy" target="_blank">OpenStreetMaps integritetspolicy</a>.</li>
+</ul>
+
+<h2>Lokal lagring</h2>
+<p>All resedata (datum, tid, sträcka, trängselskatt, anteckningar) sparas uteslutande lokalt på din enhet med webbläsarens localStorage. Inga data synkroniseras till molnet och ingen server lagrar din resehistorik.</p>
+
+<h2>Delning av data</h2>
+<p>Appen delar ingen data med tredje part förutom de tekniska anrop till OpenStreetMap som beskrivs ovan. Det finns inga annonsnätverk, analysverktyg eller spårningscookies.</p>
+
+<h2>Behörigheter</h2>
+<ul>
+  <li><strong>Plats (GPS)</strong> — krävs för att registrera körningar. Platsåtkomst aktiveras bara när du trycker på "Starta körning" och stängs av när körningen avslutas.</li>
+  <li><strong>Skärmlås (Wake Lock)</strong> — används för att hålla skärmen aktiv under aktiv körning så att GPS-spårningen inte avbryts.</li>
+</ul>
+
+<h2>Dataradering</h2>
+<p>Du kan radera all lagrad data direkt i appen (välj resor → radera) eller via din webbläsares inställningar under "Rensa webbplatsdata" för körjournal.unixkonsult.se.</p>
+
+<h2>Ändringar i policyn</h2>
+<p>Om policyn uppdateras anges det med ett nytt datum högst upp på denna sida.</p>
+
+<hr>
+
+<p style="font-size:0.85rem; color:#556;">Körjournal är en öppen källkodsprojekt utan kommersiellt syfte. Källkod finns på <a href="https://github.com/alun-hub/korjournal" target="_blank">GitHub</a>.</p>
+
+</body>
+</html>
