@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "se.unixkonsult.korjournal.twa",
+        "sha256_cert_fingerprints": ["6B:0E:AB:0B:F5:23:A6:E8:14:3F:E8:64:A5:76:64:95:B6:8A:AB:51:43:1A:44:B6:D4:3A:50:10:18:DB:22:7A"]
+      }
+    }]
