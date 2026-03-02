@@ -127,6 +127,11 @@ async function stopRecording() {
   currentTrip.passages  = taxTracker.passages;
   currentTrip.totalToll = taxTracker.getTotal();
 
+  document.getElementById("record-btn").textContent = "Hämtar adresser…";
+  document.getElementById("record-btn").className   = "idle";
+  document.getElementById("rec-dot").className      = "dot";
+  document.getElementById("status-text").textContent = "Hämtar adresser…";
+
   // Geocoda start- och stoppposition (max 4 s, annars fortsätt utan)
   const pts   = currentTrip.points;
   const first = pts[0];
@@ -163,6 +168,12 @@ function onPosition(pos) {
   if (settings.mapOrientation === "heading" && heading != null && !isNaN(heading)) {
     document.getElementById("map").style.transform = `rotate(${-heading}deg) scale(1.42)`;
   }
+
+  // GPS-noggrannhet
+  const accuracy = Math.round(pos.coords.accuracy);
+  const accEl = document.getElementById("gps-accuracy");
+  accEl.textContent = `±${accuracy} m`;
+  accEl.className = accuracy < 20 ? "gps-good" : accuracy < 50 ? "gps-ok" : "gps-poor";
 
   if (!recording) return;
 
@@ -713,9 +724,10 @@ function setUiRecording(on) {
   document.getElementById("rec-dot").className = "dot" + (on ? " recording" : "");
   document.getElementById("status-text").textContent = on ? "Spelar in…" : "Redo att starta";
   if (!on) {
-    document.getElementById("stat-km").textContent   = "0.0";
+    document.getElementById("stat-km").textContent    = "0.0";
     document.getElementById("stat-time").textContent  = "00:00";
     document.getElementById("stat-toll").textContent  = "0";
+    document.getElementById("gps-accuracy").textContent = "";
   }
 }
 
@@ -830,6 +842,158 @@ function exportMonthCSV() {
   downloadCSV(buildCSVRows(trips), `korjournal_${monthKey}.csv`);
 }
 
+// --- Backup / Restore ---
+function downloadBackup() {
+  const data = {
+    version: 1,
+    exportDate: new Date().toISOString(),
+    trips: getTrips(),
+    settings: JSON.parse(localStorage.getItem("korjournal_settings") || "{}"),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement("a"), {
+    href: url,
+    download: `korjournal_backup_${new Date().toISOString().slice(0, 10)}.json`,
+  });
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importBackup(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data.trips)) throw new Error();
+      if (!window.confirm(`Importera ${data.trips.length} resor? Befintlig data ersätts.`)) return;
+      localStorage.setItem("korjournal_trips", JSON.stringify(data.trips));
+      if (data.settings) {
+        localStorage.setItem("korjournal_settings", JSON.stringify(data.settings));
+        settings      = loadSettings();
+        MILEAGE_RATE  = settings.mileageRate;
+      }
+      showToast(`${data.trips.length} resor importerade`);
+    } catch {
+      showToast("Kunde inte läsa backupfilen", true);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// --- Statistics ---
+function showStats() {
+  const trips = getTrips();
+  const years = [...new Set(trips.map(t => t.startTime.slice(0, 4)))].sort().reverse();
+  const sel   = document.getElementById("stats-year-select");
+  while (sel.firstChild) sel.removeChild(sel.firstChild);
+
+  if (years.length === 0) {
+    const opt = document.createElement("option");
+    opt.value = ""; opt.textContent = new Date().getFullYear();
+    sel.appendChild(opt);
+    document.getElementById("stats-content").textContent = "";
+  } else {
+    const currentYear = new Date().getFullYear().toString();
+    years.forEach(y => {
+      const opt = document.createElement("option");
+      opt.value = y; opt.textContent = y;
+      if (y === currentYear) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    renderStats(sel.value || years[0]);
+  }
+
+  document.getElementById("stats-screen").style.display = "flex";
+  history.pushState({ screen: "stats" }, "");
+}
+
+function closeStats() {
+  document.getElementById("stats-screen").style.display = "none";
+}
+
+function renderStats(year) {
+  const trips     = getTrips().filter(t => t.startTime.startsWith(year));
+  const container = document.getElementById("stats-content");
+  while (container.firstChild) container.removeChild(container.firstChild);
+
+  if (trips.length === 0) {
+    const el = document.createElement("div");
+    el.className = "empty-state";
+    el.textContent = `Inga resor för ${year}`;
+    container.appendChild(el);
+    return;
+  }
+
+  function makeSection(title, rows, highlight) {
+    const sec = document.createElement("div");
+    sec.className = highlight ? "stats-section stats-highlight" : "stats-section";
+    if (title) {
+      const h = document.createElement("div");
+      h.className = "stats-section-title";
+      h.textContent = title;
+      sec.appendChild(h);
+    }
+    rows.forEach(([label, value]) => {
+      const row = document.createElement("div");
+      row.className = "stats-row";
+      const l = document.createElement("span"); l.className = "stats-label"; l.textContent = label;
+      const v = document.createElement("span"); v.className = "stats-value"; v.textContent = value;
+      row.appendChild(l); row.appendChild(v);
+      sec.appendChild(row);
+    });
+    container.appendChild(sec);
+  }
+
+  const totalKm      = trips.reduce((s, t) => s + t.distanceKm, 0);
+  const totalMileage = trips.reduce((s, t) => s + Math.round(t.distanceKm * MILEAGE_RATE), 0);
+  const totalToll    = trips.reduce((s, t) => s + t.totalToll, 0);
+
+  makeSection(null, [
+    [`${trips.length} resor`, `${totalKm.toFixed(1)} km`],
+    ["Milersättning", `${totalMileage} kr`],
+    ...(totalToll > 0 ? [["Trängselskatt", `${totalToll} kr`]] : []),
+    ["Totalt", `${totalMileage + totalToll} kr`],
+  ], true);
+
+  const byType = { "tjänst": [], "privat": [] };
+  trips.forEach(t => byType[(t.type || "tjänst") === "privat" ? "privat" : "tjänst"].push(t));
+
+  ["tjänst", "privat"].forEach(type => {
+    const ts = byType[type];
+    if (ts.length === 0) return;
+    const km  = ts.reduce((s, t) => s + t.distanceKm, 0);
+    const mil = ts.reduce((s, t) => s + Math.round(t.distanceKm * MILEAGE_RATE), 0);
+    const tol = ts.reduce((s, t) => s + t.totalToll, 0);
+    makeSection(type === "tjänst" ? "Tjänst" : "Privat", [
+      [`${ts.length} resor`, `${km.toFixed(1)} km`],
+      ["Milersättning", `${mil} kr`],
+      ...(tol > 0 ? [["Trängselskatt", `${tol} kr`]] : []),
+      ["Delsumma", `${mil + tol} kr`],
+    ]);
+  });
+
+  const months = [...new Set(trips.map(t => t.startTime.slice(0, 7)))].sort().reverse();
+  const heading = document.createElement("div");
+  heading.className = "stats-section-title";
+  heading.style.marginTop = "4px";
+  heading.textContent = "Per månad";
+  container.appendChild(heading);
+
+  months.forEach(k => {
+    const mt = trips.filter(t => t.startTime.startsWith(k));
+    const mk = mt.reduce((s, t) => s + t.distanceKm, 0);
+    const mr = mt.reduce((s, t) => s + Math.round(t.distanceKm * MILEAGE_RATE) + t.totalToll, 0);
+    const [yr, mo] = k.split("-");
+    const label = new Date(parseInt(yr), parseInt(mo) - 1, 1)
+      .toLocaleDateString("sv-SE", { month: "long" });
+    makeSection(label, [
+      [`${mt.length} resor`, `${mk.toFixed(1)} km`],
+      ["Totalt", `${mr} kr`],
+    ]);
+  });
+}
+
 // --- Event listeners ---
 document.getElementById("record-btn").addEventListener("click", () => {
   recording ? stopRecording() : startRecording();
@@ -842,7 +1006,9 @@ document.getElementById("back-btn").addEventListener("click", () => {
 });
 
 window.addEventListener("popstate", () => {
-  if (document.getElementById("history-screen").style.display !== "none") {
+  if (document.getElementById("stats-screen").style.display !== "none") {
+    closeStats();
+  } else if (document.getElementById("history-screen").style.display !== "none") {
     closeHistory();
   }
 });
@@ -928,6 +1094,20 @@ document.getElementById("sel-delete-btn").addEventListener("click", deleteSelect
 
 document.getElementById("sum-type-privat").addEventListener("click", () => setModalTripType("privat"));
 document.getElementById("sum-type-tjanst").addEventListener("click", () => setModalTripType("tjänst"));
+
+document.getElementById("stats-btn").addEventListener("click", showStats);
+document.getElementById("stats-back-btn").addEventListener("click", () => history.back());
+document.getElementById("stats-year-select").addEventListener("change", e => renderStats(e.target.value));
+
+document.getElementById("backup-btn").addEventListener("click", downloadBackup);
+document.getElementById("restore-btn").addEventListener("click", () => {
+  document.getElementById("restore-input").click();
+});
+document.getElementById("restore-input").addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (file) importBackup(file);
+  e.target.value = "";
+});
 
 document.getElementById("report-btn")?.addEventListener("click", showMonthReport);
 document.getElementById("report-close-btn")?.addEventListener("click", closeMonthReport);

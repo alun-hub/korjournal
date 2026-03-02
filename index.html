@@ -684,7 +684,7 @@
       gap: 8px;
     }
 
-    #report-btn, #export-btn {
+    #stats-btn, #report-btn, #export-btn {
       flex: 1;
       padding: 13px 8px;
       background: #1c2030;
@@ -835,6 +835,107 @@
 
     .qs-btn:active { background: #2a2e3a; }
 
+    /* ── GPS accuracy indicator ── */
+    #gps-accuracy {
+      margin-left: auto;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .gps-good { color: #22c55e; }
+    .gps-ok   { color: #f59e0b; }
+    .gps-poor { color: #ef4444; }
+
+    /* ── Stats screen ── */
+    #stats-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border-bottom: 1px solid #1c2030;
+      flex-shrink: 0;
+    }
+
+    #stats-back-btn {
+      background: none;
+      border: none;
+      color: #3b82f6;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 4px 8px 4px 0;
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+
+    #stats-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #dde;
+      flex: 1;
+    }
+
+    .stats-year-select {
+      background: #0d0f14;
+      border: 1px solid #2a2e3a;
+      border-radius: 6px;
+      color: #dde;
+      padding: 6px 10px;
+      font-size: 0.9rem;
+      outline: none;
+      appearance: none;
+    }
+
+    .stats-section {
+      padding: 14px 0;
+      border-bottom: 1px solid #1c2030;
+    }
+
+    .stats-section:last-child { border-bottom: none; }
+
+    .stats-highlight {
+      background: #141c2a;
+      border-radius: 10px;
+      padding: 14px;
+      margin: 12px 0 4px;
+      border-bottom: none;
+    }
+
+    .stats-section-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #99a;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 8px;
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+    }
+
+    .stats-label { color: #778; font-size: 0.9rem; }
+    .stats-value { color: #dde; font-size: 0.9rem; font-weight: 500; }
+
+    /* ── Settings data buttons ── */
+    .settings-data-btn {
+      width: 100%;
+      background: #1c2030;
+      border: 1px solid #2a2e3a;
+      border-radius: 6px;
+      color: #ccd;
+      padding: 9px 10px;
+      font-size: 0.88rem;
+      cursor: pointer;
+      min-height: 44px;
+      touch-action: manipulation;
+      margin-bottom: 6px;
+      text-align: left;
+    }
+
+    .settings-data-btn:active { background: #2a2e3a; }
+
     /* ── Responsive bottom panel ── */
     @media (max-width: 390px) {
       #panel { padding: 8px 12px 12px; gap: 6px; }
@@ -882,6 +983,11 @@
           <select id="sched-start"></select>
           <select id="sched-end"></select>
         </div>
+        <hr class="settings-sep">
+        <label>Data</label>
+        <button id="backup-btn" class="settings-data-btn">Ladda ner backup</button>
+        <button id="restore-btn" class="settings-data-btn">Återställ från backup</button>
+        <input type="file" id="restore-input" accept=".json" style="display:none">
       </div>
       <div id="settings-footer">
         <button id="rate-apply">Spara</button>
@@ -896,6 +1002,7 @@
   <div id="status-bar">
     <div class="dot" id="rec-dot"></div>
     <span id="status-text">Redo att starta</span>
+    <span id="gps-accuracy"></span>
   </div>
 
   <div id="stats-row">
@@ -980,8 +1087,9 @@
   <div id="quick-select-bar"></div>
   <div id="trip-list"></div>
   <div id="history-footer">
-    <button id="report-btn">Månadsrapport</button>
-    <button id="export-btn">Exportera CSV</button>
+    <button id="stats-btn">Statistik</button>
+    <button id="report-btn">Rapport</button>
+    <button id="export-btn">Exportera</button>
   </div>
   <div id="selection-footer">
     <button id="sel-export-btn">Exportera (0)</button>
@@ -1010,6 +1118,16 @@
     <div id="report-content"></div>
     <button id="report-export-btn">Exportera månad som CSV</button>
   </div>
+</div>
+
+<!-- Stats screen -->
+<div id="stats-screen" style="display:none; position:fixed; inset:0; background:#0d0f14; z-index:1200; flex-direction:column;">
+  <div id="stats-header">
+    <button id="stats-back-btn">← Tillbaka</button>
+    <span id="stats-title">Statistik</span>
+    <select id="stats-year-select" class="stats-year-select"></select>
+  </div>
+  <div id="stats-content" style="flex:1; overflow-y:auto; padding:0 16px 24px;"></div>
 </div>
 
 <script src="leaflet.js"></script>
