@@ -67,6 +67,40 @@ function initMap() {
     attribution: "© OpenStreetMap",
     maxZoom: 19,
   }).addTo(map);
+  initTollLayer();
+}
+
+// --- Toll station layer ---
+const TOLL_COLORS = {
+  city:         "#f59e0b",
+  essingeleden: "#f97316",
+  gbg:          "#3b82f6",
+};
+let tollLayer = null;
+let tollLayerVisible = false;
+
+function initTollLayer() {
+  tollLayer = L.layerGroup();
+  TOLL_STATIONS.forEach(s => {
+    L.circleMarker([s.lat, s.lng], {
+      radius: 5,
+      color: "#0008",
+      weight: 1,
+      fillColor: TOLL_COLORS[s.group] || "#aaa",
+      fillOpacity: 0.85,
+    }).bindTooltip(s.name, { sticky: true, className: "toll-tip" })
+      .addTo(tollLayer);
+  });
+}
+
+function toggleTollLayer() {
+  tollLayerVisible = !tollLayerVisible;
+  if (tollLayerVisible) {
+    tollLayer.addTo(map);
+  } else {
+    tollLayer.remove();
+  }
+  document.getElementById("toll-layer-btn").classList.toggle("active", tollLayerVisible);
 }
 
 // --- Recording ---
@@ -1099,6 +1133,8 @@ document.getElementById("sel-delete-btn").addEventListener("click", deleteSelect
 
 document.getElementById("sum-type-privat").addEventListener("click", () => setModalTripType("privat"));
 document.getElementById("sum-type-tjanst").addEventListener("click", () => setModalTripType("tjänst"));
+
+document.getElementById("toll-layer-btn").addEventListener("click", toggleTollLayer);
 
 document.getElementById("stats-btn").addEventListener("click", showStats);
 document.getElementById("stats-back-btn").addEventListener("click", () => history.back());

@@ -52,6 +52,23 @@
       touch-action: manipulation;
     }
 
+    .top-btn.active {
+      background: #111d11dd;
+      border-color: #22c55e;
+      color: #22c55e;
+    }
+
+    .toll-tip {
+      background: #1c2030;
+      border: 1px solid #2a2e3a;
+      color: #dde;
+      font-size: 0.8rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+      box-shadow: none;
+    }
+    .toll-tip::before { display: none; }
+
     /* Settings dropdown */
     #settings-panel {
       display: none;
@@ -994,6 +1011,7 @@
       </div>
     </div>
   </div>
+  <button class="top-btn" id="toll-layer-btn">⊙ Stationer</button>
   <button class="top-btn" id="history-btn">Historik</button>
 </div>
 
