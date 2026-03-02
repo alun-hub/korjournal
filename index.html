@@ -26,7 +26,7 @@
     #map {
       position: absolute;
       top: 0; left: 0; right: 0;
-      bottom: 200px;
+      bottom: 165px;
     }
 
     /* ── Top buttons ── */
@@ -122,13 +122,13 @@
     #panel {
       position: absolute;
       bottom: 0; left: 0; right: 0;
-      height: 200px;
+      height: 165px;
       background: #141820;
       border-top: 1px solid #2a2e3a;
-      padding: 8px 16px 12px;
+      padding: 10px 16px 14px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
     }
 
     #status-bar {
@@ -372,7 +372,7 @@
     /* ── Toast ── */
     .toast {
       position: fixed;
-      bottom: 218px;
+      bottom: 183px;
       left: 50%;
       transform: translateX(-50%);
       background: #1c2030;
@@ -581,10 +581,11 @@
       text-overflow: ellipsis;
     }
 
-    /* ── Type selector ── */
-    #type-selector {
+    /* ── Type selector (summary modal) ── */
+    #sum-type-selector {
       display: flex;
       gap: 6px;
+      margin-top: 4px;
     }
 
     .type-btn {
@@ -912,11 +913,6 @@
     </div>
   </div>
 
-  <div id="type-selector">
-    <button id="type-privat" class="type-btn">Privat</button>
-    <button id="type-tjanst" class="type-btn active">Tjänst</button>
-  </div>
-
   <button id="record-btn" class="idle">Starta körning</button>
 </div>
 
@@ -957,6 +953,11 @@
     <div class="summary-row" style="padding-top: 14px;">
       <span class="s-label">Totalt att begära</span>
       <span class="s-value s-total" id="sum-total"></span>
+    </div>
+
+    <div id="sum-type-selector">
+      <button id="sum-type-privat" class="type-btn">Privat</button>
+      <button id="sum-type-tjanst" class="type-btn active">Tjänst</button>
     </div>
 
     <input type="text" id="trip-note" placeholder="Anteckning — kund, ärende, syfte…">

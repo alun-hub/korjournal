@@ -54,10 +54,10 @@ function getDefaultTripType() {
     ? "tjänst" : "privat";
 }
 
-function setTripType(type) {
+function setModalTripType(type) {
   currentTripType = type;
-  document.getElementById("type-privat").classList.toggle("active", type === "privat");
-  document.getElementById("type-tjanst").classList.toggle("active", type === "tjänst");
+  document.getElementById("sum-type-privat").classList.toggle("active", type === "privat");
+  document.getElementById("sum-type-tjanst").classList.toggle("active", type === "tjänst");
 }
 
 // --- Map init ---
@@ -159,9 +159,9 @@ function onPosition(pos) {
   }
   map.panTo([lat, lng]);
 
-  // Kartorientering — kurs upp
+  // Kartorientering — kurs upp (scale(1.42) = √2, täcker hörnen vid alla vinklar)
   if (settings.mapOrientation === "heading" && heading != null && !isNaN(heading)) {
-    document.getElementById("map").style.transform = `rotate(${-heading}deg)`;
+    document.getElementById("map").style.transform = `rotate(${-heading}deg) scale(1.42)`;
   }
 
   if (!recording) return;
@@ -238,11 +238,13 @@ function showSummary(trip) {
     tollSection.style.display = "none";
   }
 
+  setModalTripType(getDefaultTripType());
   document.getElementById("trip-note").value = "";
   document.getElementById("summary-modal").classList.add("show");
 }
 
 function saveTrip() {
+  currentTrip.type = currentTripType;
   currentTrip.note = document.getElementById("trip-note").value.trim();
   const trips = getTrips();
   trips.unshift(currentTrip);
@@ -924,8 +926,8 @@ document.getElementById("sel-export-btn").addEventListener("click", exportSelect
 document.getElementById("sel-share-btn").addEventListener("click", shareSelectedTrip);
 document.getElementById("sel-delete-btn").addEventListener("click", deleteSelectedTrips);
 
-document.getElementById("type-privat")?.addEventListener("click", () => setTripType("privat"));
-document.getElementById("type-tjanst")?.addEventListener("click", () => setTripType("tjänst"));
+document.getElementById("sum-type-privat").addEventListener("click", () => setModalTripType("privat"));
+document.getElementById("sum-type-tjanst").addEventListener("click", () => setModalTripType("tjänst"));
 
 document.getElementById("report-btn")?.addEventListener("click", showMonthReport);
 document.getElementById("report-close-btn")?.addEventListener("click", closeMonthReport);
@@ -939,8 +941,6 @@ document.getElementById("sched-days")?.addEventListener("click", e => {
 
 // --- Init ---
 initMap();
-currentTripType = getDefaultTripType();
-setTripType(currentTripType);
 
 // --- Service Worker ---
 if ("serviceWorker" in navigator) {
