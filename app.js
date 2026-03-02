@@ -676,7 +676,7 @@ function applySettings() {
   settings.schedule.endTime   = document.getElementById("sched-end").value   || "18:00";
 
   saveSettings();
-  setTripType(getDefaultTripType());
+  setModalTripType(getDefaultTripType());
   document.getElementById("settings-panel").classList.remove("open");
   showToast("Inställningar sparade");
 }
