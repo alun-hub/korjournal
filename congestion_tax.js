@@ -174,7 +174,7 @@ const TOLL_STATIONS = [
   { name: "Backavägen",                       lat: 57.72639, lng: 11.96009, group: "gbg" }, // CP 956
 ];
 
-const DETECTION_RADIUS_M = 10;
+const DETECTION_RADIUS_M = 20;
 
 // Tidsluckor [start_hhmm, end_hhmm]
 const TIME_SLOTS = [
@@ -297,6 +297,22 @@ function ctHaversineM(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.asin(Math.sqrt(a));
 }
 
+// Minsta avstånd (meter) från punkt P till linjesegment A→B.
+// Används för att detektera passage även när GPS-punkterna hamnar på var sin sida om stationen.
+function ctSegmentDistM(aLat, aLng, bLat, bLng, pLat, pLng) {
+  const cos = Math.cos(aLat * Math.PI / 180);
+  const bx  = (bLng - aLng) * 111320 * cos;
+  const by  = (bLat - aLat) * 110540;
+  const px  = (pLng - aLng) * 111320 * cos;
+  const py  = (pLat - aLat) * 110540;
+  const len2 = bx * bx + by * by;
+  if (len2 < 1) return Math.sqrt(px * px + py * py); // A och B är samma punkt
+  const t  = Math.max(0, Math.min(1, (px * bx + py * by) / len2));
+  const dx = px - t * bx;
+  const dy = py - t * by;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
 class CongestionTaxTracker {
   constructor() {
     this.passedStations      = new Set(); // förhindrar dubbeldebitering av samma sensor
@@ -308,14 +324,19 @@ class CongestionTaxTracker {
     this.gbgWindowRate       = 0;         // högsta debiterade taxa i fönstret
   }
 
-  checkPoint(lat, lng, timestamp) {
+  checkPoint(lat, lng, timestamp, prevLat, prevLng) {
     let newPassage = null;
 
     for (const station of TOLL_STATIONS) {
       // Använd station.name + position som unik sensor-nyckel
       const sensorKey = station.name;
       if (this.passedStations.has(sensorKey)) continue;
-      if (ctHaversineM(lat, lng, station.lat, station.lng) > DETECTION_RADIUS_M) continue;
+      // Segment-detektering: kolla om vägsträckan sedan föregående GPS-punkt passerar stationen.
+      // Täcker glapp mellan GPS-uppdateringar vid hög fart.
+      const dist = (prevLat != null)
+        ? ctSegmentDistM(prevLat, prevLng, lat, lng, station.lat, station.lng)
+        : ctHaversineM(lat, lng, station.lat, station.lng);
+      if (dist > DETECTION_RADIUS_M) continue;
 
       this.passedStations.add(sensorKey);
 

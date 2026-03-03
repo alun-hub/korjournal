@@ -220,6 +220,7 @@ function onPosition(pos) {
   polyline.addLatLng([lat, lng]);
 
   // Distance — filter GPS-jitter < 8m
+  const prevPos = lastPos;
   if (lastPos) {
     const d = haversineM(lastPos.lat, lastPos.lng, lat, lng);
     if (d > 8) {
@@ -229,8 +230,8 @@ function onPosition(pos) {
   }
   lastPos = { lat, lng };
 
-  // Trängselskatt
-  const passage = taxTracker.checkPoint(lat, lng, timestamp);
+  // Trängselskatt — skicka föregående position för segment-detektering
+  const passage = taxTracker.checkPoint(lat, lng, timestamp, prevPos?.lat, prevPos?.lng);
   if (passage && passage.sek > 0) {
     document.getElementById("stat-toll").textContent = taxTracker.getTotal();
     showToast(`${passage.station} — +${passage.sek} kr`);
