@@ -174,7 +174,7 @@ const TOLL_STATIONS = [
   { name: "Backavägen",                       lat: 57.72639, lng: 11.96009, group: "gbg" }, // CP 956
 ];
 
-const DETECTION_RADIUS_M = 20;
+const DETECTION_RADIUS_M = 10;
 
 // Tidsluckor [start_hhmm, end_hhmm]
 const TIME_SLOTS = [
