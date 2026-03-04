@@ -829,7 +829,7 @@ function renderMonthReport(monthKey) {
 
     const title = document.createElement("div");
     title.className = "report-section-title";
-    title.textContent = `${label} — ${trips.length} resa${trips.length !== 1 ? "r" : ""}`;
+    title.textContent = `${label} — ${trips.length} ${trips.length !== 1 ? "resor" : "resa"}`;
     section.appendChild(title);
 
     const km      = trips.reduce((s, t) => s + t.distanceKm, 0);
