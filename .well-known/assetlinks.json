@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "se.unixkonsult.korjournal.twa",
-        "sha256_cert_fingerprints": ["6B:0E:AB:0B:F5:23:A6:E8:14:3F:E8:64:A5:76:64:95:B6:8A:AB:51:43:1A:44:B6:D4:3A:50:10:18:DB:22:7A"]
+        "sha256_cert_fingerprints": ["0E:0C:C1:14:C3:45:24:B2:59:38:B6:F2:53:F6:43:4E:25:4E:63:D7:5C:D1:93:03:46:5B:94:C9:F0:00:36:52"]
       }
     }]
