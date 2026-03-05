@@ -303,6 +303,24 @@ function saveTrip() {
   document.getElementById("summary-modal").classList.remove("show");
   resetUI();
   showToast("Resa sparad!");
+  checkMissedTolls(currentTrip);
+}
+
+function checkMissedTolls(trip) {
+  if (!trip.points || trip.points.length < 2) return;
+  const retroPassages  = retroTollCheck(trip.points);
+  const originalNames  = new Set(trip.passages.map(p => p.station));
+  const missed = retroPassages.filter(p => p.sek > 0 && !originalNames.has(p.station));
+  if (missed.length === 0) return;
+
+  const list = missed.map(p => `${p.station}  ${p.time}  +${p.sek} kr`).join("\n");
+  if (!window.confirm(`Möjliga missade betalstationspassager hittades:\n\n${list}\n\nVill du lägga till dem?`)) return;
+
+  trip.passages.push(...missed);
+  trip.totalToll = trip.passages.reduce((sum, p) => sum + (p.sek || 0), 0);
+  const all = getTrips().map(t => t.id === trip.id ? trip : t);
+  localStorage.setItem("korjournal_trips", JSON.stringify(all));
+  renderTripList();
 }
 
 function discardTrip() {

@@ -324,7 +324,7 @@ class CongestionTaxTracker {
     this.gbgWindowRate       = 0;         // högsta debiterade taxa i fönstret
   }
 
-  checkPoint(lat, lng, timestamp, prevLat, prevLng) {
+  checkPoint(lat, lng, timestamp, prevLat, prevLng, radius = null) {
     let newPassage = null;
 
     for (const station of TOLL_STATIONS) {
@@ -336,7 +336,7 @@ class CongestionTaxTracker {
       const dist = (prevLat != null)
         ? ctSegmentDistM(prevLat, prevLng, lat, lng, station.lat, station.lng)
         : ctHaversineM(lat, lng, station.lat, station.lng);
-      if (dist > DETECTION_RADIUS_M) continue;
+      if (dist > (radius ?? DETECTION_RADIUS_M)) continue;
 
       this.passedStations.add(sensorKey);
 
@@ -413,4 +413,18 @@ class CongestionTaxTracker {
       s => s.group === "gbg" && s.name === passage.station
     );
   }
+}
+
+// Retroaktiv tullkontroll — körs på ett sparat spår med utökad radie (20 m).
+// Används efter sparsäkning för att hitta stationer som missades i realtid p.g.a. GPS-drift.
+const DETECTION_RADIUS_RETRO_M = 20;
+
+function retroTollCheck(points) {
+  const tracker = new CongestionTaxTracker();
+  for (let i = 0; i < points.length; i++) {
+    const p    = points[i];
+    const prev = i > 0 ? points[i - 1] : null;
+    tracker.checkPoint(p.lat, p.lng, new Date(p.ts), prev?.lat, prev?.lng, DETECTION_RADIUS_RETRO_M);
+  }
+  return tracker.passages;
 }
