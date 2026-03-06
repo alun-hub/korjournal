@@ -176,6 +176,9 @@ const TOLL_STATIONS = [
 
 const DETECTION_RADIUS_M = 15;
 
+// Sätt till true för att registrera passager även på helger (för GPS-testning).
+const TOLL_TEST_MODE = true;
+
 // Tidsluckor [start_hhmm, end_hhmm]
 const TIME_SLOTS = [
   [600,  629],
@@ -224,7 +227,7 @@ const GBG_MAX_SEK = 60;
 
 function ctGetGbgRate(date) {
   const dow = date.getDay();
-  if (dow === 0 || dow === 6) return 0;    // helg
+  if (!TOLL_TEST_MODE && (dow === 0 || dow === 6)) return 0;    // helg
   if (date.getMonth() === 6) return 0;     // juli
 
   const t = date.getHours() * 100 + date.getMinutes();
@@ -270,7 +273,7 @@ function getFirstFiveJulyWeekdays(year) {
 
 function ctGetRate(date, group) {
   const dow = date.getDay();
-  if (dow === 0 || dow === 6) return 0; // helg
+  if (!TOLL_TEST_MODE && (dow === 0 || dow === 6)) return 0; // helg
 
   const m = date.getMonth();
   // Juli: avgift tas bara ut de 5 första vardagarna
