@@ -726,6 +726,69 @@
     }
 
     #report-modal.show { display: flex; }
+    /* ── Missed tolls modal ── */
+    #missed-tolls-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 1400;
+      align-items: flex-end;
+    }
+    #missed-tolls-modal.show { display: flex; }
+    #missed-tolls-sheet {
+      background: #141820;
+      border-radius: 20px 20px 0 0;
+      padding: 20px 20px 32px;
+      width: 100%;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    #missed-tolls-list {
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .missed-toll-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #1c2030;
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+    .missed-toll-item input[type=checkbox] {
+      width: 20px; height: 20px;
+      accent-color: #22c55e;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .missed-toll-info { flex: 1; }
+    .missed-toll-name { font-size: 0.95rem; color: #dde; font-weight: 600; }
+    .missed-toll-meta { font-size: 0.82rem; color: #778; margin-top: 2px; }
+    .missed-toll-sek  { font-size: 0.95rem; color: #22c55e; font-weight: 700; white-space: nowrap; }
+    #missed-tolls-footer {
+      display: flex;
+      gap: 10px;
+    }
+    #missed-tolls-footer button {
+      flex: 1;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+    #missed-tolls-skip { background: #1c2030; color: #778; }
+    #missed-tolls-add  { background: #22c55e; color: #0d0f14; }
+
 
     #report-sheet {
       background: #141820;
@@ -1156,5 +1219,20 @@
 <script src="leaflet.js"></script>
 <script src="congestion_tax.js"></script>
 <script src="app.js"></script>
+
+<!-- Missed tolls modal -->
+<div id="missed-tolls-modal">
+  <div id="missed-tolls-sheet">
+    <div class="sheet-handle"></div>
+    <div class="summary-title">Möjliga passager hittades</div>
+    <p style="font-size:0.85rem; color:#778; margin:0;">Bocka i de stationer du faktiskt passerade:</p>
+    <div id="missed-tolls-list"></div>
+    <div id="missed-tolls-footer">
+      <button id="missed-tolls-skip">Hoppa över</button>
+      <button id="missed-tolls-add">Lägg till valda</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

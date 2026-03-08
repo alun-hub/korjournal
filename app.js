@@ -308,20 +308,51 @@ function saveTrip() {
 
 function checkMissedTolls(trip) {
   if (!trip.points || trip.points.length < 2) return;
-  const retroPassages  = retroTollCheck(trip.points);
-  const originalNames  = new Set(trip.passages.map(p => p.station));
+  const retroPassages = retroTollCheck(trip.points);
+  const originalNames = new Set(trip.passages.map(p => p.station));
   const missed = retroPassages.filter(p => p.sek > 0 && !originalNames.has(p.station));
   if (missed.length === 0) return;
 
-  const list = missed.map(p => `${p.station}  ${p.time}  +${p.sek} kr`).join("\n");
-  if (!window.confirm(`Möjliga missade betalstationspassager hittades:\n\n${list}\n\nVill du lägga till dem?`)) return;
+  // Bygg upp lista med kryssrutor i modalen
+  const listEl = document.getElementById("missed-tolls-list");
+  listEl.innerHTML = missed.map((p, i) => `
+    <label class="missed-toll-item">
+      <input type="checkbox" data-index="${i}" checked>
+      <div class="missed-toll-info">
+        <div class="missed-toll-name">${p.station}</div>
+        <div class="missed-toll-meta">${p.time}</div>
+      </div>
+      <div class="missed-toll-sek">+${p.sek} kr</div>
+    </label>`).join("");
 
-  trip.passages.push(...missed);
-  trip.totalToll = trip.passages.reduce((sum, p) => sum + (p.sek || 0), 0);
-  const all = getTrips().map(t => t.id === trip.id ? trip : t);
-  localStorage.setItem("korjournal_trips", JSON.stringify(all));
-  renderTripList();
+  const modal = document.getElementById("missed-tolls-modal");
+  modal.classList.add("show");
+
+  // Spara referens till resan för knapphanterarna
+  modal._trip  = trip;
+  modal._missed = missed;
 }
+
+document.getElementById("missed-tolls-skip").addEventListener("click", () => {
+  document.getElementById("missed-tolls-modal").classList.remove("show");
+});
+
+document.getElementById("missed-tolls-add").addEventListener("click", () => {
+  const modal   = document.getElementById("missed-tolls-modal");
+  const trip    = modal._trip;
+  const missed  = modal._missed;
+  const checked = [...modal.querySelectorAll("input[type=checkbox]:checked")]
+    .map(cb => missed[parseInt(cb.dataset.index)]);
+
+  if (checked.length > 0) {
+    trip.passages.push(...checked);
+    trip.totalToll = trip.passages.reduce((sum, p) => sum + (p.sek || 0), 0);
+    const all = getTrips().map(t => t.id === trip.id ? trip : t);
+    localStorage.setItem("korjournal_trips", JSON.stringify(all));
+    renderTripList();
+  }
+  modal.classList.remove("show");
+});
 
 function discardTrip() {
   document.getElementById("summary-modal").classList.remove("show");
