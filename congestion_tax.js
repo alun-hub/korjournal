@@ -420,7 +420,7 @@ class CongestionTaxTracker {
 
 // Retroaktiv tullkontroll — körs på ett sparat spår med utökad radie (20 m).
 // Används efter sparsäkning för att hitta stationer som missades i realtid p.g.a. GPS-drift.
-const DETECTION_RADIUS_RETRO_M = 20;
+const DETECTION_RADIUS_RETRO_M = 200;
 
 function retroTollCheck(points) {
   const tracker = new CongestionTaxTracker();
