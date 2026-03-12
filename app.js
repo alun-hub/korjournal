@@ -300,10 +300,11 @@ function saveTrip() {
   const trips = getTrips();
   trips.unshift(currentTrip);
   localStorage.setItem("korjournal_trips", JSON.stringify(trips));
+  const savedTrip = currentTrip;
   document.getElementById("summary-modal").classList.remove("show");
   resetUI();
   showToast("Resa sparad!");
-  checkMissedTolls(currentTrip);
+  checkMissedTolls(savedTrip);
 }
 
 function checkMissedTolls(trip) {
