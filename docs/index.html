@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Körjournal — GPS-körjournal för Sverige</title>
+  <meta name="description" content="Spåra körningar automatiskt med GPS, beräkna trängselskatt och milersättning. Gratis PWA utan konto, all data stannar på din enhet.">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0d0f14;
+      --bg2:     #111420;
+      --bg3:     #161925;
+      --border:  #1c2030;
+      --green:   #22c55e;
+      --green2:  #16a34a;
+      --blue:    #3b82f6;
+      --amber:   #f59e0b;
+      --purple:  #a855f7;
+      --text:    #dde0ee;
+      --muted:   #aab0c8;
+      --dim:     #556070;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      background: rgba(13,15,20,0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .nav-logo svg {
+      width: 32px; height: 32px;
+    }
+    .nav-logo-text {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: 0.01em;
+    }
+    .nav-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--green);
+      color: #000;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .nav-cta:hover { background: var(--green2); color: #fff; }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 120px 24px 80px;
+      max-width: 960px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+    @media (max-width: 680px) {
+      .hero { grid-template-columns: 1fr; padding-top: 100px; gap: 40px; }
+      .hero-phone { order: -1; display: flex; justify-content: center; }
+    }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(34,197,94,0.12);
+      border: 1px solid rgba(34,197,94,0.25);
+      color: var(--green);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 99px;
+      margin-bottom: 20px;
+    }
+    .hero-eyebrow::before {
+      content: "";
+      width: 7px; height: 7px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity:1; transform: scale(1); }
+      50%      { opacity:0.5; transform: scale(1.4); }
+    }
+    h1 {
+      font-size: clamp(2rem, 5vw, 2.8rem);
+      font-weight: 700;
+      line-height: 1.15;
+      color: var(--text);
+      margin-bottom: 16px;
+      letter-spacing: -0.02em;
+    }
+    h1 span { color: var(--green); }
+    .hero-sub {
+      font-size: 1.05rem;
+      color: var(--muted);
+      max-width: 440px;
+      margin-bottom: 32px;
+      line-height: 1.7;
+    }
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--green);
+      color: #000;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 12px 24px;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-primary:hover { background: var(--green2); color: #fff; transform: translateY(-1px); }
+
+    .btn-play {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 11px 20px;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .btn-play:hover { border-color: var(--dim); background: var(--bg2); }
+
+    .hero-note {
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: var(--dim);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .hero-note::before {
+      content: "✓";
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    /* ── PHONE MOCKUP ── */
+    .phone-wrap {
+      position: relative;
+      display: flex;
+      justify-content: center;
+    }
+    .phone {
+      width: 220px;
+      height: 440px;
+      background: #0a0c10;
+      border-radius: 32px;
+      border: 2px solid #2a2d3a;
+      box-shadow:
+        0 0 0 1px #0d0f14,
+        0 24px 80px rgba(0,0,0,0.7),
+        0 0 60px rgba(34,197,94,0.06);
+      overflow: hidden;
+      position: relative;
+    }
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      background: #0d0f14;
+      position: relative;
+      overflow: hidden;
+    }
+    /* Fake map background */
+    .map-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(0deg, transparent, transparent 18px, rgba(30,35,50,0.4) 18px, rgba(30,35,50,0.4) 19px),
+        repeating-linear-gradient(90deg, transparent, transparent 18px, rgba(30,35,50,0.4) 18px, rgba(30,35,50,0.4) 19px),
+        linear-gradient(160deg, #0e1118 0%, #111520 50%, #0d0f14 100%);
+    }
+    /* Fake road */
+    .map-road {
+      position: absolute;
+      bottom: 140px; left: -10px; right: -10px;
+      height: 18px;
+      background: #1e2438;
+      transform: rotate(-8deg);
+    }
+    .map-road::after {
+      content: "";
+      position: absolute;
+      top: 8px; left: 0; right: 0;
+      height: 2px;
+      background: repeating-linear-gradient(90deg, #2d3450 0, #2d3450 12px, transparent 12px, transparent 22px);
+    }
+    /* GPS track */
+    .map-track {
+      position: absolute;
+      bottom: 140px; left: -10px; right: -10px;
+      height: 3px;
+      background: rgba(34,197,94,0.7);
+      transform: rotate(-8deg);
+      box-shadow: 0 0 8px rgba(34,197,94,0.4);
+    }
+    /* Toll station dot */
+    .map-toll {
+      position: absolute;
+      bottom: 168px; left: 100px;
+      width: 10px; height: 10px;
+      background: #ef4444;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 6px rgba(239,68,68,0.6);
+    }
+    /* Current position */
+    .map-pos {
+      position: absolute;
+      bottom: 160px; left: 60px;
+      width: 12px; height: 12px;
+      background: var(--green);
+      border: 2px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 0 4px rgba(34,197,94,0.2);
+    }
+    /* Top bar on phone */
+    .phone-topbar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 44px;
+      background: rgba(13,15,20,0.92);
+      border-bottom: 1px solid #1c2030;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 10px;
+    }
+    .phone-topbar-title {
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: #dde;
+      letter-spacing: 0.05em;
+    }
+    .phone-topbar-btns {
+      display: flex;
+      gap: 4px;
+    }
+    .phone-top-btn {
+      width: 24px; height: 24px;
+      background: #161925;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.55rem;
+      color: #aab;
+    }
+    /* Bottom panel on phone */
+    .phone-panel {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 160px;
+      background: rgba(13,15,20,0.97);
+      border-top: 1px solid #1c2030;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .phone-stats {
+      display: flex;
+      justify-content: space-between;
+    }
+    .phone-stat {
+      text-align: center;
+    }
+    .phone-stat-val {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #dde;
+    }
+    .phone-stat-lbl {
+      font-size: 0.48rem;
+      color: #556;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .phone-rec-btn {
+      height: 34px;
+      background: var(--green);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: #000;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .phone-type-row {
+      display: flex;
+      gap: 4px;
+      height: 22px;
+    }
+    .phone-type-btn {
+      flex: 1;
+      background: #161925;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.5rem;
+      font-weight: 600;
+      color: #556;
+    }
+    .phone-type-btn.active {
+      background: #3b82f6;
+      color: #fff;
+    }
+
+    /* Glow behind phone */
+    .phone-glow {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 280px; height: 400px;
+      background: radial-gradient(ellipse at center, rgba(34,197,94,0.08) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* ── SECTION COMMON ── */
+    section {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 80px 24px;
+    }
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 12px;
+    }
+    h2 {
+      font-size: clamp(1.4rem, 3.5vw, 2rem);
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    .section-sub {
+      font-size: 1rem;
+      color: var(--muted);
+      max-width: 520px;
+      margin-bottom: 48px;
+      line-height: 1.7;
+    }
+
+    /* ── FEATURE GRID ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .feature-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      transition: border-color 0.2s, transform 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--card-accent, var(--green));
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .feature-card:hover {
+      border-color: #2a2d40;
+      transform: translateY(-2px);
+    }
+    .feature-card:hover::before { opacity: 1; }
+
+    .feature-icon {
+      width: 40px; height: 40px;
+      background: var(--icon-bg, rgba(34,197,94,0.1));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      margin-bottom: 14px;
+    }
+    .feature-card h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .feature-card p {
+      font-size: 0.875rem;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    /* ── PRIVACY STRIP ── */
+    .privacy-strip {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .privacy-strip section {
+      padding: 40px 24px;
+    }
+    .privacy-inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .privacy-text h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .privacy-text p {
+      font-size: 0.9rem;
+      color: var(--muted);
+      max-width: 480px;
+      line-height: 1.65;
+    }
+    .privacy-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .badge span { color: var(--green); font-weight: 700; }
+
+    /* ── CTA SECTION ── */
+    .cta-section {
+      text-align: center;
+    }
+    .cta-section h2 { margin-bottom: 14px; }
+    .cta-section .section-sub { margin: 0 auto 36px; }
+    .cta-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      justify-content: center;
+      align-items: center;
+    }
+    .btn-primary-lg {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--green);
+      color: #000;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 14px 28px;
+      border-radius: 12px;
+      text-decoration: none;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-primary-lg:hover { background: var(--green2); color: #fff; transform: translateY(-1px); }
+    .btn-play-lg {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 13px 24px;
+      border-radius: 12px;
+      text-decoration: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .btn-play-lg:hover { border-color: var(--dim); background: var(--bg2); }
+    .cta-note {
+      margin-top: 20px;
+      font-size: 0.82rem;
+      color: var(--dim);
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 24px;
+      text-align: center;
+    }
+    .footer-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .footer-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+    .footer-logo svg { width: 22px; height: 22px; }
+    .footer-logo-text { font-size: 0.85rem; color: var(--dim); }
+    .footer-links {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .footer-links a {
+      font-size: 0.82rem;
+      color: var(--dim);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .footer-links a:hover { color: var(--muted); }
+    .footer-copy {
+      font-size: 0.78rem;
+      color: var(--dim);
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo" aria-label="Körjournal hem">
+    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect width="100" height="100" rx="22" fill="#111420"/>
+      <circle cx="50" cy="50" r="36" stroke="#22c55e" stroke-width="5"/>
+      <circle cx="50" cy="50" r="8" fill="#22c55e"/>
+      <line x1="50" y1="50" x2="50" y2="18" stroke="#22c55e" stroke-width="4" stroke-linecap="round"/>
+      <line x1="50" y1="50" x2="81" y2="67" stroke="#22c55e" stroke-width="4" stroke-linecap="round"/>
+      <line x1="50" y1="50" x2="19" y2="67" stroke="#22c55e" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+    <span class="nav-logo-text">Körjournal</span>
+  </a>
+  <a href="https://korjournal.unixkonsult.se" class="nav-cta">Öppna appen</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-text">
+    <div class="hero-eyebrow">Gratis &amp; öppen källkod</div>
+    <h1>GPS-körjournal som<br><span>fungerar för dig</span></h1>
+    <p class="hero-sub">Spåra körningar automatiskt, beräkna trängselskatt för Stockholm och Göteborg, och exportera körjournalen till CSV för skattedeklarationen. Allt lagras lokalt på din enhet.</p>
+    <div class="hero-actions">
+      <a href="https://korjournal.unixkonsult.se" class="btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+        Installera appen
+      </a>
+      <a href="#play-store" class="btn-play">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 3.5v17l17-8.5L3 3.5z"/></svg>
+        Google Play
+      </a>
+    </div>
+    <p class="hero-note">Inget konto. Ingen registrering. Fungerar offline.</p>
+  </div>
+  <div class="hero-phone">
+    <div class="phone-wrap">
+      <div class="phone-glow"></div>
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="map-bg"></div>
+          <div class="map-road"></div>
+          <div class="map-track"></div>
+          <div class="map-toll" title="Betalstation"></div>
+          <div class="map-pos"></div>
+          <div class="phone-topbar">
+            <span class="phone-topbar-title">KÖRJOURNAL</span>
+            <div class="phone-topbar-btns">
+              <div class="phone-top-btn">⊕</div>
+              <div class="phone-top-btn">☰</div>
+              <div class="phone-top-btn">⚙</div>
+            </div>
+          </div>
+          <div class="phone-panel">
+            <div class="phone-stats">
+              <div class="phone-stat">
+                <div class="phone-stat-val">12.4 km</div>
+                <div class="phone-stat-lbl">Sträcka</div>
+              </div>
+              <div class="phone-stat">
+                <div class="phone-stat-val">31 kr</div>
+                <div class="phone-stat-lbl">Milersätt.</div>
+              </div>
+              <div class="phone-stat">
+                <div class="phone-stat-val">22 kr</div>
+                <div class="phone-stat-lbl">Trängselskatt</div>
+              </div>
+            </div>
+            <div class="phone-type-row">
+              <div class="phone-type-btn">Privat</div>
+              <div class="phone-type-btn active">Tjänst</div>
+            </div>
+            <div class="phone-rec-btn">■ Avsluta körning</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section>
+  <div class="section-label">Funktioner</div>
+  <h2>Allt du behöver för körjournalen</h2>
+  <p class="section-sub">Körjournal hanterar det tekniska — du fokuserar på körandet.</p>
+
+  <div class="features-grid">
+
+    <div class="feature-card" style="--card-accent: #22c55e;">
+      <div class="feature-icon" style="--icon-bg: rgba(34,197,94,0.1);">📍</div>
+      <h3>GPS-spårning</h3>
+      <p>Spårar din rutt automatiskt i bakgrunden. Start och stopp med ett knapptryck. Historiska rutter visas på karta.</p>
+    </div>
+
+    <div class="feature-card" style="--card-accent: #ef4444;">
+      <div class="feature-icon" style="--icon-bg: rgba(239,68,68,0.1);">🚦</div>
+      <h3>Trängselskatt</h3>
+      <p>Automatisk beräkning för alla betalstationer i Stockholm och Göteborg, med korrekt tidstaxa och max-avgift per dag.</p>
+    </div>
+
+    <div class="feature-card" style="--card-accent: #f59e0b;">
+      <div class="feature-icon" style="--icon-bg: rgba(245,158,11,0.1);">💰</div>
+      <h3>Milersättning</h3>
+      <p>Beräknar milersättning enligt Skatteverkets taxa (2,50 kr/km). Justerbar i inställningar om din arbetsgivare har annan taxa.</p>
+    </div>
+
+    <div class="feature-card" style="--card-accent: #3b82f6;">
+      <div class="feature-icon" style="--icon-bg: rgba(59,130,246,0.1);">📊</div>
+      <h3>Historik &amp; export</h3>
+      <p>Alla körningar sparas lokalt. Exportera markerade resor eller hela journalen som CSV för Excel eller skattedeklarationen.</p>
+    </div>
+
+    <div class="feature-card" style="--card-accent: #a855f7;">
+      <div class="feature-icon" style="--icon-bg: rgba(168,85,247,0.1);">📅</div>
+      <h3>Månadsrapport</h3>
+      <p>Summering per månad med uppdelning på tjänsteresor och privata resor. Exportera enskilda månader som CSV.</p>
+    </div>
+
+    <div class="feature-card" style="--card-accent: #06b6d4;">
+      <div class="feature-icon" style="--icon-bg: rgba(6,182,212,0.1);">📈</div>
+      <h3>Årsstatistik</h3>
+      <p>Översikt per år: totala kilometer, milersättning och trängselskatt. Bra för deklarationen och egna uppföljningar.</p>
+    </div>
+
+    <div class="feature-card" style="--card-accent: #22c55e;">
+      <div class="feature-icon" style="--icon-bg: rgba(34,197,94,0.1);">📶</div>
+      <h3>Offline-stöd</h3>
+      <p>Fungerar som installerad app utan internetanslutning. Karttjänster laddas in när du är online och cach­as lokalt.</p>
+    </div>
+
+    <div class="feature-card" style="--card-accent: #f59e0b;">
+      <div class="feature-icon" style="--icon-bg: rgba(245,158,11,0.1);">🔍</div>
+      <h3>Retroaktiv tullkontroll</h3>
+      <p>Efter varje resa kontrolleras rutten mot alla betalstationer. Missade passager föreslås och du väljer själv om de ska läggas till.</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- PRIVACY STRIP -->
+<div class="privacy-strip">
+  <section>
+    <div class="privacy-inner">
+      <div class="privacy-text">
+        <h3>All data stannar på din enhet</h3>
+        <p>Körjournal lagrar all resedata lokalt i webbläsarens localStorage. Inga konton, inga servrar, inga prenumerationer. Öppen källkod på GitHub.</p>
+      </div>
+      <div class="privacy-badges">
+        <div class="badge"><span>✓</span> Inget konto</div>
+        <div class="badge"><span>✓</span> Ingen molnsynk</div>
+        <div class="badge"><span>✓</span> Inga annonser</div>
+        <div class="badge"><span>✓</span> Gratis</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="section-label">Kom igång</div>
+  <h2>Börja logga resor idag</h2>
+  <p class="section-sub">Öppna appen direkt i webbläsaren eller installera den som PWA på din telefon. Fungerar på Android och iOS.</p>
+  <div class="cta-actions">
+    <a href="https://korjournal.unixkonsult.se" class="btn-primary-lg">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+      Installera appen
+    </a>
+    <a href="#play-store" class="btn-play-lg">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 3.5v17l17-8.5L3 3.5z"/></svg>
+      Ladda ned på Google Play
+    </a>
+  </div>
+  <p class="cta-note">Kräver platsåtkomst för GPS-spårning · Fungerar på alla moderna webbläsare</p>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <a href="#" class="footer-logo" aria-label="Körjournal hem">
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="50" cy="50" r="36" stroke="#22c55e" stroke-width="5"/>
+        <circle cx="50" cy="50" r="8" fill="#22c55e"/>
+        <line x1="50" y1="50" x2="50" y2="18" stroke="#22c55e" stroke-width="4" stroke-linecap="round"/>
+        <line x1="50" y1="50" x2="81" y2="67" stroke="#22c55e" stroke-width="4" stroke-linecap="round"/>
+        <line x1="50" y1="50" x2="19" y2="67" stroke="#22c55e" stroke-width="4" stroke-linecap="round"/>
+      </svg>
+      <span class="footer-logo-text">Körjournal</span>
+    </a>
+    <nav class="footer-links" aria-label="Sidfotslänkar">
+      <a href="https://korjournal.unixkonsult.se">Öppna appen</a>
+      <a href="privacy.html">Integritetspolicy</a>
+      <a href="https://github.com/alun-hub/korjournal" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+    <span class="footer-copy">© 2026 Körjournal · Öppen källkod</span>
+  </div>
+</footer>
+
+</body>
+</html>
