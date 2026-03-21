@@ -177,7 +177,7 @@ const TOLL_STATIONS = [
 const DETECTION_RADIUS_M = 15;
 
 // Sätt till true för att registrera passager även på helger (för GPS-testning).
-const TOLL_TEST_MODE = true;
+const TOLL_TEST_MODE = false;
 
 // Tidsluckor [start_hhmm, end_hhmm]
 const TIME_SLOTS = [
@@ -420,7 +420,7 @@ class CongestionTaxTracker {
 
 // Retroaktiv tullkontroll — körs på ett sparat spår med utökad radie (20 m).
 // Används efter sparsäkning för att hitta stationer som missades i realtid p.g.a. GPS-drift.
-const DETECTION_RADIUS_RETRO_M = 200;
+const DETECTION_RADIUS_RETRO_M = 40;
 
 function retroTollCheck(points) {
   const tracker = new CongestionTaxTracker();
