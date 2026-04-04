@@ -681,6 +681,41 @@ function showRoute(tripId) {
 
   map.fitBounds(routePolyline.getBounds(), { padding: [60, 24] });
 
+  // Betalstationer — gruppera CP-sensorer per stationsnamn, snittposition
+  const stationPos = {};
+  for (const s of TOLL_STATIONS) {
+    if (!stationPos[s.name]) stationPos[s.name] = { latSum: 0, lngSum: 0, n: 0 };
+    stationPos[s.name].latSum += s.lat;
+    stationPos[s.name].lngSum += s.lng;
+    stationPos[s.name].n++;
+  }
+  const chargedMap = {};   // name → passage-objekt
+  const freeSet   = new Set();
+  for (const p of (trip.passages || [])) {
+    if (p.sek > 0) chargedMap[p.station] = p;
+    else           freeSet.add(p.station);
+  }
+  for (const [name, { latSum, lngSum, n }] of Object.entries(stationPos)) {
+    const lat = latSum / n;
+    const lng = lngSum / n;
+    let radius, fillColor, fillOpacity, tooltipText;
+    if (chargedMap[name]) {
+      radius = 9; fillColor = "#f97316"; fillOpacity = 1;
+      tooltipText = `${name} +${chargedMap[name].sek} kr`;
+    } else if (freeSet.has(name)) {
+      radius = 7; fillColor = "#60a5fa"; fillOpacity = 1;
+      tooltipText = `${name} (ingår)`;
+    } else {
+      radius = 5; fillColor = "#9ca3af"; fillOpacity = 0.35;
+      tooltipText = name;
+    }
+    routeMarkers.push(
+      L.circleMarker([lat, lng], {
+        radius, color: "#fff", weight: 1.5, fillColor, fillOpacity,
+      }).bindTooltip(tooltipText, { direction: "top", sticky: false }).addTo(map)
+    );
+  }
+
   const start   = new Date(trip.startTime);
   const end     = new Date(trip.endTime);
   const dateStr = start.toLocaleDateString("sv-SE", { weekday: "short", day: "numeric", month: "short" });
