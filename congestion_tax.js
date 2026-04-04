@@ -177,7 +177,7 @@ const TOLL_STATIONS = [
 const DETECTION_RADIUS_M = 15;
 
 // Sätt till true för att registrera passager även på helger (för GPS-testning).
-const TOLL_TEST_MODE = false;
+const TOLL_TEST_MODE = true;
 
 // Tidsluckor [start_hhmm, end_hhmm]
 const TIME_SLOTS = [
