@@ -297,6 +297,7 @@ function showSummary(trip) {
 function saveTrip() {
   currentTrip.type = currentTripType;
   currentTrip.note = document.getElementById("trip-note").value.trim();
+  currentTrip.passages.sort((a, b) => (a.ts ?? 0) - (b.ts ?? 0));
   const trips = getTrips();
   trips.unshift(currentTrip);
   localStorage.setItem("korjournal_trips", JSON.stringify(trips));
@@ -347,6 +348,7 @@ document.getElementById("missed-tolls-add").addEventListener("click", () => {
 
   if (checked.length > 0) {
     trip.passages.push(...checked);
+    trip.passages.sort((a, b) => (a.ts ?? 0) - (b.ts ?? 0));
     trip.totalToll = trip.passages.reduce((sum, p) => sum + (p.sek || 0), 0);
     const all = getTrips().map(t => t.id === trip.id ? trip : t);
     localStorage.setItem("korjournal_trips", JSON.stringify(all));
@@ -681,36 +683,30 @@ function showRoute(tripId) {
 
   map.fitBounds(routePolyline.getBounds(), { padding: [60, 24] });
 
-  // Betalstationer — gruppera CP-sensorer per stationsnamn, snittposition
-  const stationPos = {};
-  for (const s of TOLL_STATIONS) {
-    if (!stationPos[s.name]) stationPos[s.name] = { latSum: 0, lngSum: 0, n: 0 };
-    stationPos[s.name].latSum += s.lat;
-    stationPos[s.name].lngSum += s.lng;
-    stationPos[s.name].n++;
-  }
-  const chargedMap = {};   // name → passage-objekt
-  const freeSet   = new Set();
+  // Betalstationer — första CP per unikt stationsnamn (exakt sensorposition, ingen snittberäkning)
+  const chargedMap = {};
+  const freeSet    = new Set();
   for (const p of (trip.passages || [])) {
     if (p.sek > 0) chargedMap[p.station] = p;
     else           freeSet.add(p.station);
   }
-  for (const [name, { latSum, lngSum, n }] of Object.entries(stationPos)) {
-    const lat = latSum / n;
-    const lng = lngSum / n;
+  const seenStation = new Set();
+  for (const s of TOLL_STATIONS) {
+    if (seenStation.has(s.name)) continue;
+    seenStation.add(s.name);
     let radius, fillColor, fillOpacity, tooltipText;
-    if (chargedMap[name]) {
-      radius = 9; fillColor = "#f97316"; fillOpacity = 1;
-      tooltipText = `${name} +${chargedMap[name].sek} kr`;
-    } else if (freeSet.has(name)) {
-      radius = 7; fillColor = "#60a5fa"; fillOpacity = 1;
-      tooltipText = `${name} (ingår)`;
+    if (chargedMap[s.name]) {
+      radius = 10; fillColor = "#f97316"; fillOpacity = 1;
+      tooltipText = `${s.name} +${chargedMap[s.name].sek} kr`;
+    } else if (freeSet.has(s.name)) {
+      radius = 8; fillColor = "#60a5fa"; fillOpacity = 1;
+      tooltipText = `${s.name} (ingår)`;
     } else {
-      radius = 5; fillColor = "#9ca3af"; fillOpacity = 0.35;
-      tooltipText = name;
+      radius = 7; fillColor = "#9ca3af"; fillOpacity = 0.55;
+      tooltipText = s.name;
     }
     routeMarkers.push(
-      L.circleMarker([lat, lng], {
+      L.circleMarker([s.lat, s.lng], {
         radius, color: "#fff", weight: 1.5, fillColor, fillOpacity,
       }).bindTooltip(tooltipText, { direction: "top", sticky: false }).addTo(map)
     );

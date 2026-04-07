@@ -174,7 +174,7 @@ const TOLL_STATIONS = [
   { name: "Backavägen",                       lat: 57.72639, lng: 11.96009, group: "gbg" }, // CP 956
 ];
 
-const DETECTION_RADIUS_M = 15;
+const DETECTION_RADIUS_M = 40;
 
 // Sätt till true för att registrera passager även på helger (för GPS-testning).
 const TOLL_TEST_MODE = true;
@@ -318,7 +318,7 @@ function ctSegmentDistM(aLat, aLng, bLat, bLng, pLat, pLng) {
 
 class CongestionTaxTracker {
   constructor() {
-    this.passedStations      = new Set(); // förhindrar dubbeldebitering av samma sensor
+    this.passedStations      = new Map(); // name → ms för senaste debitering (5-min cooldown)
     this.essingeledenCharged = false;     // max en avgift per Essingeleden-passage
     this.passages            = [];
     this.season              = null;
@@ -331,17 +331,18 @@ class CongestionTaxTracker {
     let newPassage = null;
 
     for (const station of TOLL_STATIONS) {
-      // Använd station.name + position som unik sensor-nyckel
       const sensorKey = station.name;
-      if (this.passedStations.has(sensorKey)) continue;
+      // 5-minuterscooldown: förhindrar dubbeldebitering av samma CP-grupp vid en passage,
+      // men tillåter re-detektering vid returkörning (> 5 min senare).
+      const lastMs = this.passedStations.get(sensorKey) ?? -Infinity;
+      if (timestamp.getTime() - lastMs < 5 * 60 * 1000) continue;
+
       // Segment-detektering: kolla om vägsträckan sedan föregående GPS-punkt passerar stationen.
       // Täcker glapp mellan GPS-uppdateringar vid hög fart.
       const dist = (prevLat != null)
         ? ctSegmentDistM(prevLat, prevLng, lat, lng, station.lat, station.lng)
         : ctHaversineM(lat, lng, station.lat, station.lng);
       if (dist > (radius ?? DETECTION_RADIUS_M)) continue;
-
-      this.passedStations.add(sensorKey);
 
       let sek  = 0;
       let note = null;
@@ -388,8 +389,9 @@ class CongestionTaxTracker {
         }
       }
 
+      this.passedStations.set(sensorKey, timestamp.getTime());
       const timeStr = timestamp.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
-      const passage = { station: station.name, time: timeStr, sek, note };
+      const passage = { station: station.name, time: timeStr, sek, note, ts: timestamp.getTime() };
       this.passages.push(passage);
       newPassage = passage;
     }
