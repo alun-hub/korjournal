@@ -391,7 +391,7 @@ class CongestionTaxTracker {
 
       this.passedStations.set(sensorKey, timestamp.getTime());
       const timeStr = timestamp.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" });
-      const passage = { station: station.name, time: timeStr, sek, note, ts: timestamp.getTime() };
+      const passage = { station: station.name, time: timeStr, sek, note, ts: timestamp.getTime(), lat: station.lat, lng: station.lng };
       this.passages.push(passage);
       newPassage = passage;
     }

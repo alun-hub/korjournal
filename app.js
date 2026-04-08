@@ -694,19 +694,24 @@ function showRoute(tripId) {
   for (const s of TOLL_STATIONS) {
     if (seenStation.has(s.name)) continue;
     seenStation.add(s.name);
-    let radius, fillColor, fillOpacity, tooltipText;
+    let radius, fillColor, fillOpacity, tooltipText, lat, lng;
     if (chargedMap[s.name]) {
+      const p = chargedMap[s.name];
+      lat = p.lat ?? s.lat; lng = p.lng ?? s.lng;
       radius = 10; fillColor = "#f97316"; fillOpacity = 1;
-      tooltipText = `${s.name} +${chargedMap[s.name].sek} kr`;
+      tooltipText = `${s.name} +${p.sek} kr`;
     } else if (freeSet.has(s.name)) {
+      const p = [...(trip.passages || [])].find(x => x.station === s.name);
+      lat = p?.lat ?? s.lat; lng = p?.lng ?? s.lng;
       radius = 8; fillColor = "#60a5fa"; fillOpacity = 1;
       tooltipText = `${s.name} (ingår)`;
     } else {
+      lat = s.lat; lng = s.lng;
       radius = 7; fillColor = "#9ca3af"; fillOpacity = 0.55;
       tooltipText = s.name;
     }
     routeMarkers.push(
-      L.circleMarker([s.lat, s.lng], {
+      L.circleMarker([lat, lng], {
         radius, color: "#fff", weight: 1.5, fillColor, fillOpacity,
       }).bindTooltip(tooltipText, { direction: "top", sticky: false }).addTo(map)
     );
