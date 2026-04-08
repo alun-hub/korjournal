@@ -174,7 +174,7 @@ const TOLL_STATIONS = [
   { name: "Backavägen",                       lat: 57.72639, lng: 11.96009, group: "gbg" }, // CP 956
 ];
 
-const DETECTION_RADIUS_M = 40;
+const DETECTION_RADIUS_M = 25;
 
 // Sätt till true för att registrera passager även på helger (för GPS-testning).
 const TOLL_TEST_MODE = true;
@@ -422,7 +422,7 @@ class CongestionTaxTracker {
 
 // Retroaktiv tullkontroll — körs på ett sparat spår med utökad radie (20 m).
 // Används efter sparsäkning för att hitta stationer som missades i realtid p.g.a. GPS-drift.
-const DETECTION_RADIUS_RETRO_M = 40;
+const DETECTION_RADIUS_RETRO_M = 30;
 
 function retroTollCheck(points) {
   const tracker = new CongestionTaxTracker();
