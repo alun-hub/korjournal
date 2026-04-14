@@ -174,7 +174,7 @@ const TOLL_STATIONS = [
   { name: "Backavägen",                       lat: 57.72639, lng: 11.96009, group: "gbg" }, // CP 956
 ];
 
-const DETECTION_RADIUS_M = 25;
+const DETECTION_RADIUS_M = 15;
 
 // Sätt till true för att registrera passager även på helger (för GPS-testning).
 const TOLL_TEST_MODE = true;
@@ -318,7 +318,7 @@ function ctSegmentDistM(aLat, aLng, bLat, bLng, pLat, pLng) {
 
 class CongestionTaxTracker {
   constructor() {
-    this.passedStations      = new Map(); // name → ms för senaste debitering (5-min cooldown)
+    this.passedStations      = new Map(); // name → ms för senaste debitering (60-s cooldown)
     this.essingeledenCharged = false;     // max en avgift per Essingeleden-passage
     this.passages            = [];
     this.season              = null;
@@ -332,10 +332,11 @@ class CongestionTaxTracker {
 
     for (const station of TOLL_STATIONS) {
       const sensorKey = station.name;
-      // 5-minuterscooldown: förhindrar dubbeldebitering av samma CP-grupp vid en passage,
-      // men tillåter re-detektering vid returkörning (> 5 min senare).
+      // 60-s cooldown: debouncar att GPS pingar flera sensorer vid samma passage
+      // (t.ex. Fredhälls 8 CP-sensorer tar max ~13 s att passera vid 70 km/h).
+      // Kortare än 5 min för att fånga U-turn/återkörning korrekt.
       const lastMs = this.passedStations.get(sensorKey) ?? -Infinity;
-      if (timestamp.getTime() - lastMs < 5 * 60 * 1000) continue;
+      if (timestamp.getTime() - lastMs < 60 * 1000) continue;
 
       // Segment-detektering: kolla om vägsträckan sedan föregående GPS-punkt passerar stationen.
       // Täcker glapp mellan GPS-uppdateringar vid hög fart.
